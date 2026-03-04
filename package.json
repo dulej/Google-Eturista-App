@@ -1,0 +1,31 @@
+{
+  "name": "eturista-guest-check-in",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "tsx server.ts",
+    "build": "vite build",
+    "preview": "vite preview",
+    "lint": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@google/genai": "^1.41.0",
+    "@types/express": "^5.0.6",
+    "@types/node-fetch": "^2.6.13",
+    "better-sqlite3": "^12.6.2",
+    "express": "^5.2.1",
+    "lucide-react": "^0.576.0",
+    "node-fetch": "^3.3.2",
+    "pdf-lib": "^1.17.1",
+    "react": "^19.2.4",
+    "react-dom": "^19.2.4",
+    "tsx": "^4.21.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.14.0",
+    "@vitejs/plugin-react": "^5.0.0",
+    "typescript": "~5.8.2",
+    "vite": "^6.2.0"
+  }
+}

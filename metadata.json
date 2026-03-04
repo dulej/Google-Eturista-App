@@ -1,0 +1,7 @@
+{
+  "name": "eTurista Guest Check-in",
+  "description": "Streamlined guest registration using AI to scan passports and IDs. Automatically extracts guest details for eTurista compliance.",
+  "requestFramePermissions": [
+    "camera"
+  ]
+}
