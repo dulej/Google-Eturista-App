@@ -1,0 +1,31 @@
+# Dependencies
+node_modules/
+
+# Build output
+dist/
+build/
+
+# Environment & secrets — NEVER commit these
+.env
+.env.local
+.env.*.local
+
+# Database files — contain real guest data; never commit
+eturista.db
+eturista.db-shm
+eturista.db-wal
+
+# OS / editor noise
+.DS_Store
+Thumbs.db
+*.swp
+*.swo
+.vscode/
+.idea/
+
+# Logs
+*.log
+npm-debug.log*
+
+# TypeScript build info
+*.tsbuildinfo

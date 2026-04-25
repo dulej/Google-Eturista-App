@@ -1,34 +1,58 @@
+// ─── Document & identity enums ───────────────────────────────────────────────
 
 export enum DocumentType {
-  PASSPORT = 'Pasoš',
-  ID_CARD = 'Lična karta',
+  PASSPORT        = 'Pasoš',
+  ID_CARD         = 'Lična karta',
   DRIVERS_LICENSE = 'Vozačka dozvola',
-  OTHER = 'Ostalo'
+  OTHER           = 'Ostalo',
 }
 
-export type Step = 'LOGIN' | 'SELECT_OBJECT' | 'DASHBOARD' | 'PDF_SETTINGS' | 'BILLING' | 'SELECT_IMAGE' | 'SCANNING' | 'REVIEW_DATA' | 'SUCCESS' | 'GENERATE_PDF' | 'HISTORY';
-
 export enum Gender {
-  MALE = 'Muški',
-  FEMALE = 'Ženski'
+  MALE   = 'Muški',
+  FEMALE = 'Ženski',
+}
+
+// ─── App navigation ───────────────────────────────────────────────────────────
+
+export type Step =
+  | 'LOGIN'
+  | 'SELECT_OBJECT'
+  | 'DASHBOARD'
+  | 'PDF_SETTINGS'
+  | 'BILLING'
+  | 'SELECT_IMAGE'
+  | 'SCANNING'
+  | 'REVIEW_DATA'
+  | 'GENERATE_PDF'
+  | 'SUCCESS'
+  | 'HISTORY';
+
+// ─── Domain models ────────────────────────────────────────────────────────────
+
+/** A single accommodation unit returned by the eTurista API. */
+export interface Accommodation {
+  id: number;
+  name: string;
+  address?: string;
+  type?: string;
 }
 
 export interface GuestData {
   firstName: string;
   lastName: string;
-  dateOfBirth: string; // ISO format
+  dateOfBirth: string;        // ISO date (YYYY-MM-DD)
   countryOfBirth: string;
   nationality: string;
   documentType: DocumentType;
   documentNumber?: string;
   issuingCountry: string;
-  expiryDate: string; // ISO format
+  expiryDate: string;         // ISO date
   gender: Gender;
   arrivalDate: string;
   departureDate?: string;
-  rawMrz?: string; // Machine Readable Zone raw string
-  
-  // New fields for Serbian guests
+  rawMrz?: string;
+
+  // Extra fields for domestic (Serbian) guests
   isDomestic: boolean;
   jmbg?: string;
   residenceCountry?: string;
@@ -53,8 +77,10 @@ export interface PdfCustomization {
   objectType: string;
   objectAddress: string;
   priceDetails: string;
-  signatureImage?: string; // Base64 image
+  signatureImage?: string;    // Base64 data URL
 }
+
+// ─── Billing ──────────────────────────────────────────────────────────────────
 
 export type PlanType = 'STARTER' | 'PRO' | 'ENTERPRISE';
 
@@ -62,6 +88,8 @@ export interface UserAccount {
   plan: PlanType;
   credits: number;
 }
+
+// ─── Log records (read from server) ─────────────────────────────────────────
 
 export interface EntryLog {
   id: number;
