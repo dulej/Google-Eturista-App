@@ -16,7 +16,7 @@ interface SearchableSelectProps {
 }
 
 const cyrToLatMap: { [key: string]: string } = {
-  'а': 'a', 'б': 'b', 'в': 'v', 'г': 'g', 'д': 'd', 'ђ': 'd', 'е': 'e', 'ж': 'z', 'з': 'z', 'и': 'i',
+  'а': 'a', 'б': 'b', 'в': 'v', 'г': 'g', 'д': 'd', 'ђ': 'dj', 'е': 'e', 'ж': 'z', 'з': 'z', 'и': 'i',
   'ј': 'j', 'к': 'k', 'л': 'l', 'љ': 'lj', 'м': 'm', 'н': 'n', 'њ': 'nj', 'о': 'o', 'п': 'p', 'р': 'r',
   'с': 's', 'т': 't', 'ћ': 'c', 'у': 'u', 'ф': 'f', 'х': 'h', 'ц': 'c', 'ч': 'c', 'џ': 'dz', 'ш': 's'
 };
@@ -197,13 +197,14 @@ const GuestForm: React.FC<GuestFormProps> = ({ initialData, onSubmit, onCancel, 
   useEffect(() => {
     const fetchData = async () => {
       try {
+        const headers = { 'Authorization': sessionToken };
         const [countriesRes, municipalitiesRes, serviceTypesRes, arrivalModesRes, stayReasonsRes, entryPlacesRes] = await Promise.all([
-          fetch('/api/db/countries').then(res => res.json()).then(data => Array.isArray(data) ? data : []),
-          fetch('/api/db/municipalities').then(res => res.json()).then(data => Array.isArray(data) ? data : []),
-          fetch('/api/db/service-types').then(res => res.json()).then(data => Array.isArray(data) ? data : []),
-          fetch('/api/db/arrival-modes').then(res => res.json()).then(data => Array.isArray(data) ? data : []),
-          fetch('/api/db/stay-reasons').then(res => res.json()).then(data => Array.isArray(data) ? data : []),
-          fetch('/api/db/entry-places').then(res => res.json()).then(data => Array.isArray(data) ? data : [])
+          fetch('/api/db/countries', { headers }).then(res => res.json()).then(data => Array.isArray(data) ? data : []),
+          fetch('/api/db/municipalities', { headers }).then(res => res.json()).then(data => Array.isArray(data) ? data : []),
+          fetch('/api/db/service-types', { headers }).then(res => res.json()).then(data => Array.isArray(data) ? data : []),
+          fetch('/api/db/arrival-modes', { headers }).then(res => res.json()).then(data => Array.isArray(data) ? data : []),
+          fetch('/api/db/stay-reasons', { headers }).then(res => res.json()).then(data => Array.isArray(data) ? data : []),
+          fetch('/api/db/entry-places', { headers }).then(res => res.json()).then(data => Array.isArray(data) ? data : [])
         ]);
 
         setCountries(countriesRes);
@@ -220,26 +221,44 @@ const GuestForm: React.FC<GuestFormProps> = ({ initialData, onSubmit, onCancel, 
           if (match) matchedCountryCode = match.Kod3;
         }
 
-        // Auto-select Municipality based on Municipality of Birth, Place of Birth or Issuing Authority
+        // Auto-select Municipality
         let matchedMunicipalityId = '';
-        const mSearch = initialData.municipalityOfBirth || initialData.placeOfBirth || initialData.issuingAuthority || '';
+        const mSearch = (initialData.municipalityOfResidence || initialData.municipalityOfBirth || initialData.placeOfBirth || initialData.issuingAuthority || '').trim();
+        console.log('Auto-select municipality search string:', mSearch);
+        
         if (mSearch) {
           const match = findBestMatch(mSearch, municipalitiesRes, 'Naziv');
-          if (match) matchedMunicipalityId = String(match["Maticni Broj"]);
+          if (match) {
+            console.log('Matched municipality:', match);
+            matchedMunicipalityId = String(match["Maticni Broj"]);
+          } else {
+            console.warn('No municipality match found for:', mSearch);
+          }
         }
 
         // Set defaults if not present
-        setData(prev => ({
-          ...prev,
-          countryOfBirth: matchedCountryCode,
-          residenceCountry: prev.residenceCountry || (prev.isDomestic ? 'SRB' : ''),
-          municipalityOfResidence: prev.municipalityOfResidence || matchedMunicipalityId,
-          serviceType: prev.serviceType || '1',
-          arrivalMode: prev.arrivalMode || '1',
-          stayReason: prev.stayReason || '4',
-          arrivalDate: prev.arrivalDate || new Date().toISOString().split('T')[0],
-          arrivalTime: prev.arrivalTime || new Date().toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' })
-        }));
+        setData(prev => {
+          // If residence fields are strings (from AI), they need to be replaced by IDs
+          const currentMuni = prev.municipalityOfResidence || '';
+          const muniId = (!currentMuni || isNaN(Number(currentMuni))) ? matchedMunicipalityId : currentMuni;
+
+          const tomorrow = new Date();
+          tomorrow.setDate(tomorrow.getDate() + 1);
+          const tomorrowStr = tomorrow.toISOString().split('T')[0];
+
+          return {
+            ...prev,
+            countryOfBirth: prev.countryOfBirth || matchedCountryCode,
+            residenceCountry: prev.residenceCountry || (prev.isDomestic ? 'SRB' : ''),
+            municipalityOfResidence: muniId,
+            serviceType: prev.serviceType || '1',
+            arrivalMode: prev.arrivalMode || '1',
+            stayReason: prev.stayReason || '4',
+            arrivalDate: prev.arrivalDate || new Date().toISOString().split('T')[0],
+            arrivalTime: prev.arrivalTime || new Date().toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' }),
+            plannedDepartureDate: prev.plannedDepartureDate || tomorrowStr
+          };
+        });
       } catch (error) {
         console.error("Failed to fetch dropdown data", error);
       }
@@ -251,17 +270,29 @@ const GuestForm: React.FC<GuestFormProps> = ({ initialData, onSubmit, onCancel, 
     const fetchPlaces = async () => {
       if (data.municipalityOfResidence) {
         try {
-          const res = await fetch(`/api/db/places/${data.municipalityOfResidence}`);
+          const res = await fetch(`/api/db/places/${data.municipalityOfResidence}`, {
+            headers: { 'Authorization': sessionToken }
+          });
           const placesData = await res.json();
           const pData = Array.isArray(placesData) ? placesData : [];
           setPlaces(pData);
 
-          // Try to match placeOfBirth to a place in this municipality
-          if (initialData.placeOfBirth) {
+          // Try to match placeOfResidence or placeOfBirth
+          const pSearch = (initialData.placeOfResidence || initialData.placeOfBirth || '').trim();
+          console.log('Auto-select place search string:', pSearch);
+          
+          if (pSearch) {
             setData(prev => {
-              if (prev.placeOfResidence) return prev;
-              const match = findBestMatch(initialData.placeOfBirth!, pData, 'Naziv Mesta');
-              if (match) return { ...prev, placeOfResidence: String(match["Maticni Broj Mesta"]) };
+              // If already has a numeric ID, don't overwrite unless it was just the string name
+              if (prev.placeOfResidence && !isNaN(Number(prev.placeOfResidence))) {
+                 return prev;
+              }
+              const match = findBestMatch(pSearch, pData, 'Naziv Mesta');
+              if (match) {
+                console.log('Matched place:', match);
+                return { ...prev, placeOfResidence: String(match["Maticni Broj Mesta"]) };
+              }
+              console.warn('No place match found for:', pSearch);
               return prev;
             });
           }

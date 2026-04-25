@@ -5,9 +5,10 @@ import { Calendar, User, FileText, MapPin, Clock, Trash2, ChevronRight, Search, 
 
 interface HistoryViewProps {
   onBack: () => void;
+  sessionToken: string;
 }
 
-const HistoryView: React.FC<HistoryViewProps> = ({ onBack }) => {
+const HistoryView: React.FC<HistoryViewProps> = ({ onBack, sessionToken }) => {
   const [viewMode, setViewMode] = useState<'entries' | 'db'>('entries');
   const [entries, setEntries] = useState<EntryLog[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -22,7 +23,7 @@ const HistoryView: React.FC<HistoryViewProps> = ({ onBack }) => {
   useEffect(() => {
     if (viewMode === 'entries') {
       setIsLoading(true);
-      fetch('/api/logs/entries')
+      fetch('/api/logs/entries', { headers: { 'Authorization': sessionToken } })
         .then(res => res.json())
         .then(data => {
           setEntries(data);
@@ -34,7 +35,7 @@ const HistoryView: React.FC<HistoryViewProps> = ({ onBack }) => {
         });
     } else {
       setIsDbLoading(true);
-      fetch('/api/db/tables')
+      fetch('/api/db/tables', { headers: { 'Authorization': sessionToken } })
         .then(res => res.json())
         .then(data => {
           setTables(data);
@@ -48,12 +49,12 @@ const HistoryView: React.FC<HistoryViewProps> = ({ onBack }) => {
           setIsDbLoading(false);
         });
     }
-  }, [viewMode]);
+  }, [viewMode, sessionToken]);
 
   useEffect(() => {
     if (viewMode === 'db' && selectedTable) {
       setIsDbLoading(true);
-      fetch(`/api/db/data/${encodeURIComponent(selectedTable)}`)
+      fetch(`/api/db/data/${encodeURIComponent(selectedTable)}`, { headers: { 'Authorization': sessionToken } })
         .then(res => res.json())
         .then(data => {
           setTableData(data);

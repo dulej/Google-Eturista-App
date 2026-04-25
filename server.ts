@@ -11,10 +11,8 @@ import { z } from 'zod';
 
 const isProd = process.env.NODE_ENV === 'production';
 
-// Test portal — change to production URL when going live
-const ETURISTA_BASE_URL = isProd
-  ? 'https://portal.eturista.gov.rs/eturistwebapi/api'
-  : 'https://test.portal.eturista.gov.rs/eturistwebapi/api';
+// Test portal — forced as per user request
+const ETURISTA_BASE_URL = 'https://www.test.portal.eturista.gov.rs/eturistwebapi/api';
 
 // ─── Database ─────────────────────────────────────────────────────────────────
 
@@ -39,6 +37,21 @@ db.exec(`
     accommodationId   INTEGER,
     accommodationName TEXT
   );
+  CREATE TABLE IF NOT EXISTS Opstine (
+    Id INTEGER PRIMARY KEY, "Maticni Broj" INTEGER UNIQUE, Naziv TEXT
+  );
+  CREATE TABLE IF NOT EXISTS Mesta (
+    Id INTEGER PRIMARY KEY, "Maticni Broj Mesta" INTEGER UNIQUE, "Naziv Mesta" TEXT, "Maticni Broj Opstine" INTEGER
+  );
+  CREATE TABLE IF NOT EXISTS Drzava (
+    Id INTEGER PRIMARY KEY, Naziv TEXT, Cirlica TEXT, Alfa2 TEXT, Alfa3 TEXT
+  );
+  CREATE TABLE IF NOT EXISTS "Vrsta Putne Isprave" (Id INTEGER PRIMARY KEY, Naziv TEXT);
+  CREATE TABLE IF NOT EXISTS "Mesto Ulaska U Republiku Srbiju" (Id INTEGER PRIMARY KEY, Naziv TEXT);
+  CREATE TABLE IF NOT EXISTS "Nacin Dolaska" (Id INTEGER PRIMARY KEY, Naziv TEXT);
+  CREATE TABLE IF NOT EXISTS "Vrsta Pruzenih Usluga" (Id INTEGER PRIMARY KEY, Naziv TEXT);
+  CREATE TABLE IF NOT EXISTS "Razlog Boravka" (Id INTEGER PRIMARY KEY, Naziv TEXT);
+
   CREATE TABLE IF NOT EXISTS Gost (
     Id                                           INTEGER PRIMARY KEY AUTOINCREMENT,
     ExternalId                                   TEXT NOT NULL UNIQUE,
@@ -71,6 +84,38 @@ db.exec(`
     UpdatedAt DATETIME DEFAULT CURRENT_TIMESTAMP
   );
 `);
+
+// ─── Seed Data (if empty) ─────────────────────────────────────────────────────
+
+function seedData() {
+  const opstineCount = db.prepare('SELECT count(*) as count FROM Opstine').get() as any;
+  if (opstineCount.count === 0) {
+    console.log('Seeding small sample of Opstine and Drzava (recreate your backup for more)...');
+    db.prepare('INSERT INTO Drzava (Naziv, Cirlica, Alfa2, Alfa3) VALUES (?,?,?,?)').run('Srbija', 'Србија', 'RS', 'SRB');
+    db.prepare('INSERT INTO Drzava (Naziv, Cirlica, Alfa2, Alfa3) VALUES (?,?,?,?)').run('Nemačka', 'Немачка', 'DE', 'DEU');
+    db.prepare('INSERT INTO Drzava (Naziv, Cirlica, Alfa2, Alfa3) VALUES (?,?,?,?)').run('Austrija', 'Аустрија', 'AT', 'AUT');
+    
+    db.prepare('INSERT INTO Opstine ("Maticni Broj", Naziv) VALUES (?,?)').run(70041, 'Vračar');
+    db.prepare('INSERT INTO Opstine ("Maticni Broj", Naziv) VALUES (?,?)').run(70017, 'Stari Grad');
+    db.prepare('INSERT INTO Opstine ("Maticni Broj", Naziv) VALUES (?,?)').run(70122, 'Novi Beograd');
+
+    db.prepare('INSERT INTO Mesta ("Maticni Broj Mesta", "Naziv Mesta", "Maticni Broj Opstine") VALUES (?,?,?)').run(70041, 'Beograd-Vračar', 70041);
+    db.prepare('INSERT INTO Mesta ("Maticni Broj Mesta", "Naziv Mesta", "Maticni Broj Opstine") VALUES (?,?,?)').run(70017, 'Beograd-Stari Grad', 70017);
+    
+    db.prepare('INSERT INTO "Razlog Boravka" (Id, Naziv) VALUES (?,?)').run(4, 'TURIZAM');
+    db.prepare('INSERT INTO "Razlog Boravka" (Id, Naziv) VALUES (?,?)').run(1, 'ODMOR');
+    db.prepare('INSERT INTO "Razlog Boravka" (Id, Naziv) VALUES (?,?)').run(5, 'POSLOVNO');
+
+    db.prepare('INSERT INTO "Nacin Dolaska" (Id, Naziv) VALUES (?,?)').run(1, 'Individualno');
+    db.prepare('INSERT INTO "Nacin Dolaska" (Id, Naziv) VALUES (?,?)').run(2, 'Agencija');
+
+    db.prepare('INSERT INTO "Vrsta Pruzenih Usluga" (Id, Naziv) VALUES (?,?)').run(1, 'Smeštaj');
+    
+    db.prepare('INSERT INTO "Vrsta Putne Isprave" (Id, Naziv) VALUES (?,?)').run(72, 'Pasoš');
+    db.prepare('INSERT INTO "Vrsta Putne Isprave" (Id, Naziv) VALUES (?,?)').run(10, 'Lična karta');
+  }
+}
+seedData();
 
 // ─── Cleanup (deferred, non-blocking) ────────────────────────────────────────
 
@@ -220,6 +265,9 @@ function buildPayload(guest: any, accommodationId: number): object {
     Prezime:                       guest.lastName,
     DatumRodjenja:                 guest.dateOfBirth,   // yyyy-MM-dd
     PolSifra:                      polSifra,
+    DrzavaRodjenjaAlfa2:           '',
+    DrzavljanstvoAlfa2:            '',
+    DrzavaPrebivalistaAlfa2:       '',
   };
 
   if (isDomestic) {
@@ -230,12 +278,12 @@ function buildPayload(guest: any, accommodationId: number): object {
     const residesInSerbia = !guest.residenceCountry || guest.residenceCountry === 'SRB';
     if (residesInSerbia) {
       if (guest.municipalityOfResidence) {
-        osnovniPodaci.OpstinaPrebivalistaMaticniBroj = guest.municipalityOfResidence;
+        osnovniPodaci.OpstinaPrebivalistaMaticniBroj = Number(guest.municipalityOfResidence);
         const row = db.prepare('SELECT Naziv FROM Opstine WHERE "Maticni Broj" = ?').get(guest.municipalityOfResidence) as any;
         osnovniPodaci.OpstinaPrebivalistaNaziv = guest.municipalityOfResidenceName || row?.Naziv || '';
       }
       if (guest.placeOfResidence) {
-        osnovniPodaci.MestoPrebivalistaMaticniBroj = guest.placeOfResidence;
+        osnovniPodaci.MestoPrebivalistaMaticniBroj = Number(guest.placeOfResidence);
         const row = db.prepare('SELECT "Naziv Mesta" FROM Mesta WHERE "Maticni Broj Mesta" = ?').get(guest.placeOfResidence) as any;
         osnovniPodaci.MestoPrebivalistaNaziv = guest.placeOfResidenceName || row?.['Naziv Mesta'] || '';
       }
@@ -272,12 +320,12 @@ function buildPayload(guest: any, accommodationId: number): object {
   // ── PodaciOBoravku ─────────────────────────────────────────────────────────
   const nacinDolaska = String(guest.arrivalMode || '1');
   const podaciOBoravku: Record<string, any> = {
-    UgostiteljskiObjekatJedinstveniIdentifikator: Number(accommodationId),
+    UgostiteljskiObjekatJedinstveniIdentifikator: String(accommodationId),
     VrstaPruzenihUslugaSifra:                     String(guest.serviceType || '1'),
     NacinDolaskaSifra:                            nacinDolaska,
     DatumICasDolaska:                             `${guest.arrivalDate} ${guest.arrivalTime || '12:00'}`,
     UslovZaUmanjenjeBoravisneTakseSifra:          '',
-    RazlogBoravkaSifra:                           String(guest.stayReason ?? '0'),
+    RazlogBoravkaSifra:                           String(guest.stayReason ?? '4'),
     PlaniraniDatumOdlaska:                        depDate,
   };
 
@@ -297,6 +345,7 @@ function buildPayload(guest: any, accommodationId: number): object {
 
 async function startServer() {
   const app  = express();
+  app.set('trust proxy', 1);
   const PORT = 3000;
 
   app.use(cors({ origin: isProd ? process.env.ALLOWED_ORIGIN ?? false : true, credentials: true }));
@@ -326,11 +375,19 @@ async function startServer() {
         body: JSON.stringify({ korisnickoIme: username, lozinka: password }),
       });
 
-      if (!r.ok) return res.status(r.status).json({ error: 'Neispravni podaci za prijavu.' });
+      const responseBody = await r.json();
+      console.log(`[eTurista] Login response status: ${r.status}`);
+      
+      const data = parseResponse(responseBody) as Record<string, any>;
+      console.log(`[eTurista] Login response data keys:`, Object.keys(data));
 
-      const data = parseResponse(await r.json()) as Record<string, any>;
-      const token = data.token ?? data.Token ?? data.access_token ?? data.result?.token ?? data.data?.token;
-      const id    = data.id ?? data.Id ?? data.result?.id ?? data.korisnik?.id ?? data.data?.id;
+      if (!r.ok) {
+        console.error(`[eTurista] Login error details:`, data);
+        return res.status(r.status).json({ error: 'Neispravni podaci za prijavu.' });
+      }
+
+      const token = data.token ?? data.Token ?? data.access_token ?? data.result?.token ?? data.data?.token ?? data.SessionToken;
+      const id    = data.korisnikId ?? data.KorisnikId ?? data.id ?? data.Id ?? data.result?.id ?? data.korisnik?.id ?? data.data?.id;
 
       if (token && id != null) return res.json({ sessionToken: String(token), userId: Number(id) });
 
@@ -347,26 +404,103 @@ async function startServer() {
     const userId = req.query.userId;
     if (!userId) return res.status(400).json({ error: 'userId je obavezan.' });
     try {
+      const authHeader = req.headers.authorization!;
+      // Ensure Bearer prefix is present
+      const bearerHeader = authHeader.toLowerCase().startsWith('bearer ') 
+        ? authHeader 
+        : `Bearer ${authHeader}`;
+
+      console.log(`[eTurista] → Fetching accommodations for user ${userId}...`);
       const r = await fetch(
         `${ETURISTA_BASE_URL}/UgostiteljskiObjekat/vratiUgostiteljskeObjektePremaUgostiteljId?ugostiteljId=${userId}`,
-        { headers: { Authorization: req.headers.authorization!, Accept: 'application/json' } },
+        { headers: { Authorization: bearerHeader, Accept: 'application/json' } },
       );
-      if (!r.ok) throw new Error(`eTurista ${r.status}`);
-      const items = toArray(parseResponse(await r.json()));
+      
+      const responseText = await r.text();
+      console.log(`[eTurista] ← Status: ${r.status}`);
+      
+      if (!r.ok) {
+        console.error(`[eTurista] Error response: ${responseText}`);
+        // If 401, maybe log part of the header to confirm format (safely)
+        if (r.status === 401) {
+          console.log(`[eTurista] Auth header used: ${bearerHeader.substring(0, 15)}...`);
+        }
+        throw new Error(`eTurista status ${r.status}: ${responseText}`);
+      }
+      
+      const items = toArray(parseResponse(JSON.parse(responseText)));
       res.json(items.map((item: any) => ({
-        id:      item.id      ?? item.Id,
+        id:      item.id   ?? item.Id   ?? item.ugostiteljskiObjekatId ?? item.UgostiteljskiObjekatId,
+        jid:     item.jedinstveniIdentifikator ?? item.JedinstveniIdentifikator ?? item.identifikator ?? item.Identifikator ?? item.id ?? item.Id,
         name:    item.naziv   ?? item.Naziv,
         address: item.adresa  ?? item.Adresa,
         type:    item.vrstaObjekta ?? item.VrstaObjekta,
       })));
     } catch (err: any) {
-      res.status(500).json({ error: 'Nije moguće dohvatiti smeštajne objekte.', details: err.message });
+      console.error('Accommodations fetch error:', err);
+      res.status(500).json({ 
+        error: 'Nije moguće dohvatiti smeštajne objekte.', 
+        details: err.stack || err.message || 'Nepoznata greška' 
+      });
+    }
+  });
+
+  // ── Accommodation Units ───────────────────────────────────────────────────
+  app.get('/api/eturista/accommodation-units', requireToken, async (req, res) => {
+    const objId = req.query.accommodationId;
+    if (!objId) return res.status(400).json({ error: 'accommodationId je obavezan.' });
+    try {
+      const authHeader = req.headers.authorization!;
+      const bearerHeader = authHeader.toLowerCase().startsWith('bearer ') ? authHeader : `Bearer ${authHeader}`;
+
+      console.log(`[eTurista] → Fetching units for object ${objId}...`);
+      
+      const endpoints = [
+        `UgostiteljskiObjekat/vratiSmestajneJediniceZaObjekat?ugostiteljskiObjekatId=${objId}`,
+        `SmestajnaJedinica/vratiSmestajneJediniceZaObjekat?ugostiteljskiObjekatId=${objId}`,
+        `SmestajnaJedinica/vratiSveSmestajneJediniceZaObjekat?ugostiteljskiObjekatId=${objId}`,
+        `UgostiteljskiObjekat/vratiSveSmestajneJediniceZaObjekat?UgostiteljskiObjekatId=${objId}`,
+      ];
+
+      let lastError = '';
+      let successR: any = null;
+
+      for (const ep of endpoints) {
+        console.log(`[eTurista] → Trying endpoint: ${ep}`);
+        const r = await fetch(`${ETURISTA_BASE_URL}/${ep}`, { headers: { Authorization: bearerHeader, Accept: 'application/json' } });
+        const text = await r.text();
+        if (r.ok) {
+          console.log(`[eTurista] → Found units via ${ep.split('/')[0]}`);
+          successR = JSON.parse(text);
+          break;
+        } else {
+          lastError = `eTurista status ${r.status} (${ep.split('/')[0]}): ${text}`;
+        }
+      }
+
+      if (!successR) throw new Error(lastError || 'Nije pronađen ispravan endpoint za jedinice.');
+
+      const items = toArray(parseResponse(successR));
+      console.log(`[eTurista] → Found ${items.length} units.`);
+      res.json(items.map((it: any) => ({
+        id:      it.id ?? it.Id ?? it.smestajnaJedinicaId ?? it.SmestajnaJedinicaId,
+        jid:     it.jedinstveniIdentifikator ?? it.JedinstveniIdentifikator ?? it.identifikator ?? it.Identifikator ?? it.id ?? it.Id,
+        number:  it.brojSmestajneJedinice ?? it.BrojSmestajneJedinice ?? it.broj ?? it.Broj,
+        floor:   it.spratSmestajneJedinice ?? it.SpratSmestajneJedinice ?? it.sprat ?? it.Sprat,
+        name:    it.naziv ?? it.Naziv,
+      })));
+    } catch (err: any) {
+      console.error('Units fetch error:', err);
+      res.status(500).json({ 
+        error: 'Nije moguće dohvatiti smeštajne jedinice.', 
+        details: err.stack || err.message || 'Nepoznata greška' 
+      });
     }
   });
 
   // ── Register guest ────────────────────────────────────────────────────────
   app.post('/api/eturista/register', requireToken, async (req, res) => {
-    const { guest, accommodationId } = req.body;
+    const { guest, accommodationId, jid, unit } = req.body;
     if (!guest || !accommodationId)
       return res.status(400).json({ error: 'Podaci gosta i ID objekta su obavezni.' });
 
@@ -376,7 +510,30 @@ async function startServer() {
       return res.status(422).json({ error: 'Validacija nije prošla.', details: errors });
 
     // Build correct payload
-    const payload = buildPayload(guest, Number(accommodationId));
+    // Use jid if provided (public ID), fallback to internal ID
+    const effectiveAccId = jid || accommodationId;
+    const payload: any = buildPayload(guest, effectiveAccId);
+
+    // Add units if provided
+    if (unit) {
+      const unitJidRaw = unit.jid || unit.identifikator || unit.id;
+      const unitJid = isNaN(Number(unitJidRaw)) ? 0 : Number(unitJidRaw);
+
+      payload.PodaciOBoravku.SmestajneJedinice = [
+        {
+          BrojSmestajneJedinice: String(unit.number || unit.name || ''),
+          SpratSmestajneJedinice: String(unit.floor || ''),
+          JedinstveniIdentifikator: unitJid,
+          JeObrisan: 'false', // Use string false if 0 fails
+          DatumBoravkaOd: guest.arrivalDate,
+        }
+      ];
+    } else {
+      // In Hotels Import API, if SmestajneJedinice is required, sending null or [] might fail.
+      // But we must have one if forced.
+      payload.PodaciOBoravku.SmestajneJedinice = [];
+    }
+
     console.log('\n[eTurista] → Payload:\n', JSON.stringify(payload, null, 2));
 
     // Save to local DB (non-blocking — does not block the API call)
@@ -404,7 +561,7 @@ async function startServer() {
         guest.residenceCountry || 'SRB', guest.placeOfBirth || null,
         guest.documentTypeCode || null, guest.documentNumber || null,
         guest.entryDateToSerbia || null, guest.entryPlaceToSerbia || null,
-        guest.serviceType || '1', guest.arrivalMode || '1', guest.stayReason ?? '0',
+        guest.serviceType || '1', guest.arrivalMode || '1', guest.stayReason || '4',
         `${guest.arrivalDate} ${guest.arrivalTime || '12:00'}`,
         guest.plannedDepartureDate || guest.departureDate || null,
         Number(accommodationId), now, now,
@@ -415,10 +572,15 @@ async function startServer() {
 
     // POST to eTurista
     try {
-      const r = await fetch(`${ETURISTA_BASE_URL}/Prijava/PrijaviKorisnikaUslugaSmestaja`, {
+      const authHeader = req.headers.authorization!;
+      const bearerHeader = authHeader.toLowerCase().startsWith('bearer ') 
+        ? authHeader 
+        : `Bearer ${authHeader}`;
+
+      const r = await fetch(`${ETURISTA_BASE_URL}/hoteliimport/checkin`, {
         method: 'POST',
         headers: {
-          Authorization:  req.headers.authorization!,
+          Authorization:  bearerHeader,
           'Content-Type': 'application/json',
           Accept:         'application/json',
         },

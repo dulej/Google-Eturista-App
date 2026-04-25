@@ -11,8 +11,9 @@ import GuestForm from './components/GuestForm';
 import PdfFiller from './components/PdfFiller';
 import HistoryView from './components/HistoryView';
 import SuccessScreen from './components/SuccessScreen';
-import { Step, GuestData, PdfCustomization, PlanType, Accommodation } from './types';
-import { extractGuestDataFromId, submitToETurista, loginToETurista, getAccommodations } from './services/geminiService';
+import UnitSelector from './components/UnitSelector';
+import { Step, GuestData, PdfCustomization, PlanType, Accommodation, AccommodationUnit } from './types';
+import { extractGuestDataFromId, submitToETurista, loginToETurista, getAccommodations, getAccommodationUnits } from './services/geminiService';
 
 // ─── Defaults ────────────────────────────────────────────────────────────────
 // No personal data here — users fill these in via the PDF Settings screen.
@@ -51,6 +52,9 @@ const App: React.FC = () => {
   // Accommodations — typed properly
   const [accommodations, setAccommodations] = useState<Accommodation[]>([]);
   const [activeObject,   setActiveObject]   = useState<Accommodation | null>(null);
+  const [units,          setUnits]          = useState<AccommodationUnit[]>([]);
+  const [activeUnit,     setActiveUnit]     = useState<AccommodationUnit | null>(null);
+  const [isLoadingUnits, setIsLoadingUnits] = useState(false);
 
   // Guest flow
   const [guestData,    setGuestData]    = useState<GuestData | null>(null);
@@ -133,11 +137,27 @@ const App: React.FC = () => {
     }
   }, []);
 
-  const handleObjectSelect = useCallback((id: number) => {
+  const handleObjectSelect = useCallback(async (id: number) => {
     const obj = accommodations.find(o => o.id === id) ?? null;
     setActiveObject(obj);
+    if (obj) {
+      setStep('SELECT_UNIT');
+      setIsLoadingUnits(true);
+      try {
+        const u = await getAccommodationUnits(sessionToken!, obj.id);
+        setUnits(u);
+      } catch (err: any) {
+        setError('Nije moguće dohvatiti smeštajne jedinice: ' + err.message);
+      } finally {
+        setIsLoadingUnits(false);
+      }
+    }
+  }, [accommodations, sessionToken]);
+
+  const handleUnitSelect = useCallback((unit: AccommodationUnit) => {
+    setActiveUnit(unit);
     setStep('DASHBOARD');
-  }, [accommodations]);
+  }, []);
 
   const handleLogout = useCallback(() => {
     setSessionToken(null);
@@ -158,6 +178,7 @@ const App: React.FC = () => {
     setError(null);
     try {
       const extracted = await extractGuestDataFromId(images);
+      console.log('AI Extracted Data:', extracted);
       setGuestData(extracted);
       setStep('REVIEW_DATA');
     } catch (err) {
@@ -183,7 +204,12 @@ const App: React.FC = () => {
     setError(null);
 
     try {
-      const result = await submitToETurista(guestData, sessionToken, activeObject.id);
+      const result = await submitToETurista(
+        guestData, 
+        sessionToken, 
+        { id: activeObject.id, jid: activeObject.jid }, 
+        activeUnit ?? undefined
+      );
 
       if (result.success) {
         // Save to local entry history (server-side audit log is written inside /api/eturista/register)
@@ -271,9 +297,19 @@ const App: React.FC = () => {
             />
           )}
 
+          {step === 'SELECT_UNIT' && (
+            <UnitSelector
+              units={units}
+              onSelect={handleUnitSelect}
+              onBack={() => setStep('SELECT_OBJECT')}
+              isLoading={isLoadingUnits}
+            />
+          )}
+
           {step === 'DASHBOARD' && activeObject && (
             <Dashboard
               objectName={activeObject.name}
+              unitName={activeUnit?.number ? `Soba ${activeUnit.number}` : activeUnit?.name}
               onStartCheckin={() => setStep('SELECT_IMAGE')}
               onPdfSettings={() => setStep('PDF_SETTINGS')}
               onBilling={handleGoBilling}
@@ -282,8 +318,8 @@ const App: React.FC = () => {
             />
           )}
 
-          {step === 'HISTORY' && (
-            <HistoryView onBack={() => setStep('DASHBOARD')} />
+          {step === 'HISTORY' && sessionToken && (
+            <HistoryView onBack={() => setStep('DASHBOARD')} sessionToken={sessionToken} />
           )}
 
           {step === 'BILLING' && (

@@ -17,6 +17,7 @@ export enum Gender {
 export type Step =
   | 'LOGIN'
   | 'SELECT_OBJECT'
+  | 'SELECT_UNIT'
   | 'DASHBOARD'
   | 'PDF_SETTINGS'
   | 'BILLING'
@@ -32,9 +33,18 @@ export type Step =
 /** A single accommodation unit returned by the eTurista API. */
 export interface Accommodation {
   id: number;
+  jid: string;
   name: string;
   address?: string;
   type?: string;
+}
+
+export interface AccommodationUnit {
+  id: number;
+  jid: number;
+  number: string;
+  floor: string;
+  name: string;
 }
 
 export interface GuestData {

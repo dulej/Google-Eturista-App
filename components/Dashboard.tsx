@@ -3,6 +3,7 @@ import React from 'react';
 
 interface DashboardProps {
   objectName: string;
+  unitName?: string;
   onStartCheckin: () => void;
   onPdfSettings: () => void;
   onBilling: () => void;
@@ -10,7 +11,7 @@ interface DashboardProps {
   onBack: () => void;
 }
 
-const Dashboard: React.FC<DashboardProps> = ({ objectName, onStartCheckin, onPdfSettings, onBilling, onHistory, onBack }) => {
+const Dashboard: React.FC<DashboardProps> = ({ objectName, unitName, onStartCheckin, onPdfSettings, onBilling, onHistory, onBack }) => {
   return (
     <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
       <div className="text-center">
@@ -18,7 +19,10 @@ const Dashboard: React.FC<DashboardProps> = ({ objectName, onStartCheckin, onPdf
           <i className="fas fa-th-large text-2xl"></i>
         </div>
         <h2 className="text-2xl font-bold text-slate-800 dark:text-slate-100">Glavni meni</h2>
-        <p className="text-slate-500 dark:text-slate-400 mt-1">Upravljaj objektom <strong>{objectName}</strong></p>
+        <p className="text-slate-500 dark:text-slate-400 mt-1">
+          Objekat: <strong>{objectName}</strong>
+          {unitName && <span className="block text-indigo-600 dark:text-indigo-400 text-sm font-semibold">Jedinica: {unitName}</span>}
+        </p>
       </div>
 
       <div className="grid grid-cols-1 gap-4">
