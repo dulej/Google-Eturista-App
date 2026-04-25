@@ -10,8 +10,6 @@ const db = new Database("eturista.db");
 
 // Create Tables
 db.exec(`
-  DROP TABLE IF EXISTS guests;
-
   CREATE TABLE IF NOT EXISTS audit_logs (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     timestamp DATETIME DEFAULT CURRENT_TIMESTAMP,
@@ -36,18 +34,66 @@ db.exec(`
     accommodationId INTEGER,
     accommodationName TEXT
   );
+
+  CREATE TABLE IF NOT EXISTS Gost (
+    Id INTEGER PRIMARY KEY AUTOINCREMENT,
+    ExternalId TEXT NOT NULL,
+    Izmena INTEGER NOT NULL CHECK (Izmena IN (0,1)),
+    DaLiJeLiceDomace INTEGER NOT NULL CHECK (DaLiJeLiceDomace IN (0,1)),
+    Ime TEXT NOT NULL,
+    Prezime TEXT NOT NULL,
+    DatumRodjenja TEXT NOT NULL,
+    PolSifra TEXT NOT NULL CHECK (PolSifra IN ('M','Z')),
+    Jmbg TEXT CHECK (length(Jmbg) = 13 OR Jmbg IS NULL),
+    DrzavaRodjenjaAlfa3 TEXT NOT NULL DEFAULT 'SRB',
+    DrzavljanstvoAlfa3 TEXT NOT NULL DEFAULT '',
+    OpstinaPrebivalistaMaticniBroj INTEGER,
+    OpstinaPrebivalistaNaziv TEXT,
+    MestoPrebivalistaMaticniBroj INTEGER,
+    MestoPrebivalistaNaziv TEXT,
+    DrzavaPrebivalistaAlfa3 TEXT NOT NULL DEFAULT 'SRB',
+    MestoRodjenjaNaziv TEXT,
+    VrstaPutneIspraveSifra TEXT,
+    BrojPutneIsprave TEXT,
+    DatumVazenjaPutneIsprave TEXT,
+    DatumIzdavanjaPutneIsprave TEXT,
+    DatumUlaskaURepublikuSrbiju TEXT,
+    MestoUlaskaURepublikuSrbijuSifra TEXT,
+    VrstaPruzenihUslugaSifra TEXT,
+    NacinDolaskaSifra TEXT,
+    RazlogBoravkaSifra TEXT,
+    DatumICasDolaska TEXT,
+    PlaniraniDatumOdlaska TEXT,
+    UgostiteljskiObjekatJedinstveniIdentifikator INTEGER,
+    CreatedAt DATETIME DEFAULT CURRENT_TIMESTAMP,
+    UpdatedAt DATETIME DEFAULT CURRENT_TIMESTAMP
+  );
 `);
 
-// Cleanup Function: Remove logs older than 30 days
+// Cleanup Function: Remove logs older than 30 days and guests older than 31 days
 function cleanupOldLogs() {
   const thirtyDaysAgo = new Date();
   thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
-  const isoString = thirtyDaysAgo.toISOString();
+  const iso30 = thirtyDaysAgo.toISOString();
+
+  const thirtyOneDaysAgo = new Date();
+  thirtyOneDaysAgo.setDate(thirtyOneDaysAgo.getDate() - 31);
+  const iso31 = thirtyOneDaysAgo.toISOString();
   
-  db.prepare("DELETE FROM audit_logs WHERE timestamp < ?").run(isoString);
-  db.prepare("DELETE FROM error_logs WHERE timestamp < ?").run(isoString);
-  db.prepare("DELETE FROM entry_logs WHERE timestamp < ?").run(isoString);
-  console.log(`Cleanup: Removed log records older than 30 days.`);
+  db.prepare("DELETE FROM audit_logs WHERE timestamp < ?").run(iso30);
+  db.prepare("DELETE FROM error_logs WHERE timestamp < ?").run(iso30);
+  db.prepare("DELETE FROM entry_logs WHERE timestamp < ?").run(iso30);
+  
+  try {
+    const result = db.prepare("DELETE FROM Gost WHERE CreatedAt < ?").run(iso31);
+    if (result.changes > 0) {
+      console.log(`Cleanup: Removed ${result.changes} guest records older than 31 days.`);
+    }
+  } catch (e) {
+    console.error("Failed to cleanup Gost table:", e);
+  }
+
+  console.log(`Cleanup: Processed logs and guest records.`);
 }
 
 // Run cleanup on startup and every 24 hours
@@ -130,7 +176,6 @@ async function startServer() {
       const id = data.id || data.Id || data.result?.id || data.result?.Id || (data.korisnik ? (data.korisnik.id || data.korisnik.Id) : null) || data.data?.id;
 
       if (token && id) {
-        logger.audit('LOGIN_SUCCESS', id, `User ${username} logged in successfully`);
         return res.json({ 
           sessionToken: String(token), 
           userId: Number(id) 
@@ -186,12 +231,79 @@ async function startServer() {
         return res.status(400).json({ error: "Missing required data" });
       }
 
+      // 1. Insert into local Gost table
+      try {
+        const now = new Date().toISOString();
+        const insertGost = db.prepare(`
+          INSERT INTO Gost (
+            ExternalId, Izmena, DaLiJeLiceDomace, Ime, Prezime, DatumRodjenja, PolSifra, Jmbg,
+            DrzavaRodjenjaAlfa3, DrzavljanstvoAlfa3, OpstinaPrebivalistaMaticniBroj, OpstinaPrebivalistaNaziv,
+            MestoPrebivalistaMaticniBroj, MestoPrebivalistaNaziv, DrzavaPrebivalistaAlfa3,
+            MestoRodjenjaNaziv, VrstaPutneIspraveSifra, BrojPutneIsprave, DatumVazenjaPutneIsprave,
+            DatumIzdavanjaPutneIsprave, DatumUlaskaURepublikuSrbiju, MestoUlaskaURepublikuSrbijuSifra,
+            VrstaPruzenihUslugaSifra, NacinDolaskaSifra, RazlogBoravkaSifra,
+            DatumICasDolaska, PlaniraniDatumOdlaska, UgostiteljskiObjekatJedinstveniIdentifikator, CreatedAt, UpdatedAt
+          ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        `);
+
+        // Get names for municipality and place if IDs are provided
+        let opstinaNaziv = null;
+        if (guest.municipalityOfResidence) {
+          const row = db.prepare("SELECT Naziv FROM Opstine WHERE \"Maticni Broj\" = ?").get(guest.municipalityOfResidence) as any;
+          if (row) opstinaNaziv = row.Naziv;
+        }
+
+        let mestoNaziv = null;
+        if (guest.placeOfResidence) {
+          const row = db.prepare("SELECT \"Naziv Mesta\" FROM Mesta WHERE \"Maticni Broj Mesta\" = ?").get(guest.placeOfResidence) as any;
+          if (row) mestoNaziv = row["Naziv Mesta"];
+        }
+
+        const arrivalDateTime = `${guest.arrivalDate} ${guest.arrivalTime || '12:00'}`;
+
+        insertGost.run(
+          `EXT_${Date.now()}`, // ExternalId
+          0, // Izmena
+          guest.isDomestic ? 1 : 0, // DaLiJeLiceDomace
+          guest.firstName,
+          guest.lastName,
+          guest.dateOfBirth,
+          guest.gender === 'Female' ? 'Z' : 'M',
+          guest.jmbg || null,
+          guest.countryOfBirth || 'SRB',
+          guest.nationality || '',
+          guest.municipalityOfResidence || null,
+          opstinaNaziv,
+          guest.placeOfResidence || null,
+          mestoNaziv,
+          guest.residenceCountry || 'SRB',
+          guest.placeOfBirth || '',
+          guest.documentType === 'Passport' ? 'P' : 'L', // Sifra
+          guest.documentNumber,
+          guest.expiryDate || null,
+          guest.documentIssueDate || null,
+          guest.entryDateToSerbia || null,
+          guest.entryPlaceToSerbia || null,
+          guest.serviceType || '1',
+          guest.arrivalMode || '1',
+          guest.stayReason || '4',
+          arrivalDateTime,
+          guest.plannedDepartureDate || null,
+          accommodationId,
+          now,
+          now
+        );
+      } catch (dbError: any) {
+        console.error("Failed to insert into Gost table:", dbError);
+        // We continue with eTurista registration even if local DB fails
+      }
+
       const formatPayloadDate = (dateStr: string) => {
         if (!dateStr) return null;
         return `${dateStr}T00:00:00Z`;
       };
 
-      // Map our model to eTurista model
+      // Map our model to eTurista model for the API call
       const payload = {
         ObjekatId: accommodationId,
         Ime: guest.firstName,
@@ -204,7 +316,7 @@ async function startServer() {
         DatumVazenjaIsprave: formatPayloadDate(guest.expiryDate),
         DatumDolaska: formatPayloadDate(guest.arrivalDate),
         VrstaTuristeId: 2, 
-        RazlogBoravkaId: 1 
+        RazlogBoravkaId: guest.stayReason || 1 
       };
 
       const response = await fetch(`${ETURISTA_BASE_URL}/Turista/Create`, {
@@ -259,6 +371,70 @@ async function startServer() {
   });
 
   // Database Explorer Endpoints
+  app.get("/api/db/countries", (req, res) => {
+    try {
+      const data = db.prepare("SELECT * FROM Drzava ORDER BY Cirlica ASC").all();
+      res.json(data);
+    } catch (error: any) {
+      res.status(500).json({ error: "Failed to fetch countries", details: error.message });
+    }
+  });
+
+  app.get("/api/db/municipalities", (req, res) => {
+    try {
+      const data = db.prepare("SELECT * FROM Opstine ORDER BY Naziv ASC").all();
+      res.json(data);
+    } catch (error: any) {
+      res.status(500).json({ error: "Failed to fetch municipalities", details: error.message });
+    }
+  });
+
+  app.get("/api/db/places/:municipalityId", (req, res) => {
+    try {
+      const { municipalityId } = req.params;
+      const data = db.prepare("SELECT * FROM Mesta WHERE \"Maticni Broj Opstine\" = ? ORDER BY \"Naziv Mesta\" ASC").all(municipalityId);
+      res.json(data);
+    } catch (error: any) {
+      res.status(500).json({ error: "Failed to fetch places", details: error.message });
+    }
+  });
+
+  app.get("/api/db/service-types", (req, res) => {
+    try {
+      const data = db.prepare("SELECT * FROM \"Vrsta Pruzenih Usluga\" ORDER BY Naziv ASC").all();
+      res.json(data);
+    } catch (error: any) {
+      res.status(500).json({ error: "Failed to fetch service types", details: error.message });
+    }
+  });
+
+  app.get("/api/db/arrival-modes", (req, res) => {
+    try {
+      const data = db.prepare("SELECT * FROM \"Nacin Dolaska\" ORDER BY Naziv ASC").all();
+      res.json(data);
+    } catch (error: any) {
+      res.status(500).json({ error: "Failed to fetch arrival modes", details: error.message });
+    }
+  });
+
+  app.get("/api/db/stay-reasons", (req, res) => {
+    try {
+      const data = db.prepare("SELECT * FROM \"Razlog Boravka\" ORDER BY Naziv ASC").all();
+      res.json(data);
+    } catch (error: any) {
+      res.status(500).json({ error: "Failed to fetch stay reasons", details: error.message });
+    }
+  });
+
+  app.get("/api/db/entry-places", (req, res) => {
+    try {
+      const data = db.prepare("SELECT * FROM \"Mesto Ulaska U Republiku Srbiju\" ORDER BY Naziv ASC").all();
+      res.json(data);
+    } catch (error: any) {
+      res.status(500).json({ error: "Failed to fetch entry places", details: error.message });
+    }
+  });
+
   app.get("/api/db/tables", (req, res) => {
     try {
       const tables = db.prepare("SELECT name FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite_%'").all();

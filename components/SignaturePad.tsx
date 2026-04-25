@@ -88,7 +88,7 @@ const SignaturePad: React.FC<SignaturePadProps> = ({ onSave, onClear }) => {
           onTouchEnd={stopDrawing}
         />
         <div className="absolute bottom-2 right-2 pointer-events-none opacity-30 text-[10px] font-bold uppercase tracking-widest text-slate-400">
-          Sign Here
+          Potpišite se ovde
         </div>
       </div>
       <button
@@ -97,7 +97,7 @@ const SignaturePad: React.FC<SignaturePadProps> = ({ onSave, onClear }) => {
         className="text-[10px] font-bold text-slate-400 hover:text-red-500 uppercase tracking-widest flex items-center space-x-1"
       >
         <i className="fas fa-eraser"></i>
-        <span>Clear Signature</span>
+        <span>Obriši potpis</span>
       </button>
     </div>
   );

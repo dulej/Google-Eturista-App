@@ -18,14 +18,14 @@ const LoginScreen: React.FC<LoginScreenProps> = ({ onLogin }) => {
     try {
       const success = await onLogin(username, password);
       if (!success) {
-        setError('Invalid username or password.');
+        setError('Neispravno korisničko ime ili lozinka.');
       }
     } catch (err: any) {
       console.error('Login error:', err);
       if (err.message === 'INVALID_CREDENTIALS') {
-        setError('Incorrect username or password.');
+        setError('Pogrešno korisničko ime ili lozinka.');
       } else {
-        setError(`Server error: ${err.message || 'Check your internet connection'}`);
+        setError(`Greška na serveru: ${err.message || 'Proverite internet vezu'}`);
       }
     } finally {
       setIsLoading(false);
@@ -38,13 +38,13 @@ const LoginScreen: React.FC<LoginScreenProps> = ({ onLogin }) => {
         <div className="w-16 h-16 bg-indigo-100 dark:bg-indigo-900/40 rounded-2xl flex items-center justify-center text-indigo-600 dark:text-indigo-400 mx-auto mb-4">
           <i className="fas fa-lock text-2xl"></i>
         </div>
-        <h2 className="text-2xl font-bold text-slate-800 dark:text-slate-100">System Login</h2>
-        <p className="text-slate-500 dark:text-slate-400 mt-1">Enter your eTurista portal credentials.</p>
+        <h2 className="text-2xl font-bold text-slate-800 dark:text-slate-100">Prijava na sistem</h2>
+        <p className="text-slate-500 dark:text-slate-400 mt-1">Unesite vaše eTurista portal kredencijale.</p>
       </div>
 
       <form onSubmit={handleSubmit} className="space-y-4">
         <div>
-          <label className="block text-[11px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1.5 ml-1">Username</label>
+          <label className="block text-[11px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1.5 ml-1">Korisničko ime</label>
           <div className="relative">
             <i className="fas fa-user absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 dark:text-slate-500 text-sm"></i>
             <input 
@@ -53,13 +53,13 @@ const LoginScreen: React.FC<LoginScreenProps> = ({ onLogin }) => {
               value={username}
               onChange={(e) => setUsername(e.target.value)}
               className="w-full pl-11 pr-4 py-3.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition-all text-sm dark:text-slate-100 dark:placeholder-slate-500"
-              placeholder="Username"
+              placeholder="Korisničko ime"
             />
           </div>
         </div>
 
         <div>
-          <label className="block text-[11px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1.5 ml-1">Password</label>
+          <label className="block text-[11px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1.5 ml-1">Lozinka</label>
           <div className="relative">
             <i className="fas fa-key absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 dark:text-slate-500 text-sm"></i>
             <input 
@@ -86,7 +86,7 @@ const LoginScreen: React.FC<LoginScreenProps> = ({ onLogin }) => {
           className="w-full py-4 bg-indigo-600 text-white font-bold rounded-xl shadow-lg hover:bg-indigo-700 transition-all flex items-center justify-center space-x-2 disabled:opacity-70 disabled:cursor-not-allowed mt-4"
         >
           {isLoading ? <i className="fas fa-spinner fa-spin"></i> : <i className="fas fa-right-to-bracket"></i>}
-          <span>{isLoading ? 'Connecting...' : 'Sign In'}</span>
+          <span>{isLoading ? 'Povezivanje...' : 'Prijavi se'}</span>
         </button>
       </form>
     </div>

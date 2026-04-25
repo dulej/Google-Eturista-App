@@ -17,8 +17,8 @@ const Dashboard: React.FC<DashboardProps> = ({ objectName, onStartCheckin, onPdf
         <div className="w-16 h-16 bg-indigo-100 dark:bg-indigo-900/40 rounded-2xl flex items-center justify-center text-indigo-600 dark:text-indigo-400 mx-auto mb-4">
           <i className="fas fa-th-large text-2xl"></i>
         </div>
-        <h2 className="text-2xl font-bold text-slate-800 dark:text-slate-100">Main Menu</h2>
-        <p className="text-slate-500 dark:text-slate-400 mt-1">Manage <strong>{objectName}</strong></p>
+        <h2 className="text-2xl font-bold text-slate-800 dark:text-slate-100">Glavni meni</h2>
+        <p className="text-slate-500 dark:text-slate-400 mt-1">Upravljaj objektom <strong>{objectName}</strong></p>
       </div>
 
       <div className="grid grid-cols-1 gap-4">
@@ -30,11 +30,11 @@ const Dashboard: React.FC<DashboardProps> = ({ objectName, onStartCheckin, onPdf
             <i className="fas fa-user-plus text-xl"></i>
           </div>
           <div className="flex-1">
-            <span className="block font-bold text-slate-800 dark:text-slate-100 text-lg">Full Guest Check-in</span>
-            <span className="text-xs text-slate-400 dark:text-slate-500">Scan + Registration cycle</span>
+            <span className="block font-bold text-slate-800 dark:text-slate-100 text-lg">Nova prijava gosta</span>
+            <span className="text-xs text-slate-400 dark:text-slate-500">Skeniranje + Registracija</span>
           </div>
           <div className="text-[10px] font-black text-indigo-500 dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-900/30 px-2.5 py-1 rounded-full uppercase tracking-widest">
-            1 Credit
+            1 Kredit
           </div>
         </button>
 
@@ -46,8 +46,8 @@ const Dashboard: React.FC<DashboardProps> = ({ objectName, onStartCheckin, onPdf
             <i className="fas fa-history text-xl"></i>
           </div>
           <div>
-            <span className="block font-bold text-slate-800 dark:text-slate-100 text-lg">Guest History</span>
-            <span className="text-xs text-slate-400 dark:text-slate-500">View last 30 days of records</span>
+            <span className="block font-bold text-slate-800 dark:text-slate-100 text-lg">Istorija prijava</span>
+            <span className="text-xs text-slate-400 dark:text-slate-500">Pregled zapisa u poslednjih 30 dana</span>
           </div>
         </button>
 
@@ -59,8 +59,8 @@ const Dashboard: React.FC<DashboardProps> = ({ objectName, onStartCheckin, onPdf
             <i className="fas fa-file-signature text-xl"></i>
           </div>
           <div>
-            <span className="block font-bold text-slate-800 dark:text-slate-100 text-lg">PDF Settings</span>
-            <span className="text-xs text-slate-400 dark:text-slate-500">Business info & signatures</span>
+            <span className="block font-bold text-slate-800 dark:text-slate-100 text-lg">Podešavanja računa</span>
+            <span className="text-xs text-slate-400 dark:text-slate-500">Poslovni podaci i potpisi</span>
           </div>
         </button>
 
@@ -72,8 +72,8 @@ const Dashboard: React.FC<DashboardProps> = ({ objectName, onStartCheckin, onPdf
             <i className="fas fa-credit-card text-xl"></i>
           </div>
           <div>
-            <span className="block font-bold text-slate-800 dark:text-slate-100 text-lg">Plans & Top-up</span>
-            <span className="text-xs text-slate-400 dark:text-slate-500">Manage billing and payments</span>
+            <span className="block font-bold text-slate-800 dark:text-slate-100 text-lg">Planovi i dopuna</span>
+            <span className="text-xs text-slate-400 dark:text-slate-500">Upravljaj pretplatom i plaćanjem</span>
           </div>
         </button>
       </div>
@@ -83,7 +83,7 @@ const Dashboard: React.FC<DashboardProps> = ({ objectName, onStartCheckin, onPdf
         className="w-full py-3 text-slate-400 font-bold hover:text-indigo-600 transition-colors text-xs uppercase tracking-widest"
       >
         <i className="fas fa-arrow-left mr-2"></i>
-        Switch Property
+        Promeni objekat
       </button>
     </div>
   );

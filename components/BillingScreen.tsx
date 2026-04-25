@@ -18,25 +18,25 @@ const BillingScreen: React.FC<BillingScreenProps> = ({ currentCredits, currentPl
     {
       id: 'STARTER' as PlanType,
       name: 'Starter',
-      price: 'Free',
-      subtitle: 'Pay as you go',
-      features: ['5 Trial Credits', 'Manual PDF Entry', 'Email Support'],
+      price: 'Besplatno',
+      subtitle: 'Plati po korišćenju',
+      features: ['5 probnih kredita', 'Ručni unos PDF-a', 'Email podrška'],
       isCurrent: currentPlan === 'STARTER'
     },
     {
       id: 'PRO' as PlanType,
       name: 'Professional',
       price: '€29',
-      subtitle: 'Unlimited Credits',
-      features: ['Unlimited Guest Scans', 'Per Property License', 'Digital Signatures', 'eTurista Sync'],
+      subtitle: 'Neograničeni krediti',
+      features: ['Neograničeno skeniranje', 'Licenca po objektu', 'Digitalni potpisi', 'eTurista sinhronizacija'],
       isPopular: true,
       isCurrent: currentPlan === 'PRO'
     }
   ];
 
   const creditPacks = [
-    { name: 'Basic Pack', credits: 20, price: '€9.99' },
-    { name: 'Business Pack', credits: 100, price: '€39.99' }
+    { name: 'Osnovni paket', credits: 20, price: '€9.99' },
+    { name: 'Biznis paket', credits: 100, price: '€39.99' }
   ];
 
   const handlePayment = (e: React.FormEvent) => {
@@ -55,16 +55,16 @@ const BillingScreen: React.FC<BillingScreenProps> = ({ currentCredits, currentPl
   return (
     <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
       <div className="text-center">
-        <h2 className="text-3xl font-black text-slate-800 dark:text-slate-100">Billing & Plans</h2>
+        <h2 className="text-3xl font-black text-slate-800 dark:text-slate-100">Pretplata i planovi</h2>
         <p className="text-slate-500 dark:text-slate-400 mt-2">
-          Current Plan: <span className="font-bold text-indigo-600 dark:text-indigo-400">{currentPlan}</span>
+          Trenutni plan: <span className="font-bold text-indigo-600 dark:text-indigo-400">{currentPlan}</span>
           {!checkoutItem && <span className="mx-2">•</span>}
-          {!checkoutItem && <span className="text-slate-400 dark:text-slate-500">{currentPlan === 'STARTER' ? `${currentCredits} Credits Left` : 'Unlimited Usage'}</span>}
+          {!checkoutItem && <span className="text-slate-400 dark:text-slate-500">{currentPlan === 'STARTER' ? `Preostalo ${currentCredits} kredita` : 'Neograničeno korišćenje'}</span>}
         </p>
       </div>
 
       <div className="space-y-4">
-        <h3 className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 dark:text-slate-500 px-2">Subscriptions</h3>
+        <h3 className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 dark:text-slate-500 px-2">Pretplate</h3>
         {plans.map((plan) => (
           <div 
             key={plan.id}
@@ -73,10 +73,10 @@ const BillingScreen: React.FC<BillingScreenProps> = ({ currentCredits, currentPl
             }`}
           >
             {plan.isPopular && !plan.isCurrent && (
-              <span className="absolute -top-3 right-8 bg-indigo-600 text-white text-[10px] font-black uppercase px-3 py-1 rounded-full shadow-lg">Recommended</span>
+              <span className="absolute -top-3 right-8 bg-indigo-600 text-white text-[10px] font-black uppercase px-3 py-1 rounded-full shadow-lg">Preporučeno</span>
             )}
             {plan.isCurrent && (
-              <span className="absolute -top-3 right-8 bg-emerald-600 text-white text-[10px] font-black uppercase px-3 py-1 rounded-full shadow-lg">Active Plan</span>
+              <span className="absolute -top-3 right-8 bg-emerald-600 text-white text-[10px] font-black uppercase px-3 py-1 rounded-full shadow-lg">Aktivan plan</span>
             )}
             
             <div className="flex justify-between items-center mb-4">
@@ -86,7 +86,7 @@ const BillingScreen: React.FC<BillingScreenProps> = ({ currentCredits, currentPl
               </div>
               <div className="text-right">
                 <span className="text-2xl font-black text-slate-900 dark:text-white">{plan.price}</span>
-                {plan.id !== 'STARTER' && <span className="text-xs text-slate-400 ml-1">/mo</span>}
+                {plan.id !== 'STARTER' && <span className="text-xs text-slate-400 ml-1">/mes</span>}
               </div>
             </div>
 
@@ -106,18 +106,18 @@ const BillingScreen: React.FC<BillingScreenProps> = ({ currentCredits, currentPl
                 plan.isCurrent ? 'bg-emerald-100 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400 cursor-default' : 'bg-indigo-600 text-white hover:bg-indigo-700 shadow-lg active:scale-95'
               }`}
             >
-              {plan.isCurrent ? 'Current Subscription' : `Upgrade to ${plan.name}`}
+              {plan.isCurrent ? 'Trenutna pretplata' : `Pređi na ${plan.name}`}
             </button>
           </div>
         ))}
 
         <div className="pt-4 space-y-4">
-          <h3 className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 dark:text-slate-500 px-2">One-time Credit Packs</h3>
+          <h3 className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 dark:text-slate-500 px-2">Jednokratni paketi kredita</h3>
           <div className="grid grid-cols-2 gap-4">
             {creditPacks.map(pack => (
               <button
                 key={pack.name}
-                onClick={() => setCheckoutItem({ name: `${pack.credits} Credits`, price: pack.price, type: 'CREDITS', value: pack.credits })}
+                onClick={() => setCheckoutItem({ name: `${pack.credits} Kredita`, price: pack.price, type: 'CREDITS', value: pack.credits })}
                 className="bg-white dark:bg-slate-800 border-2 border-slate-100 dark:border-slate-700 p-5 rounded-3xl text-left hover:border-indigo-400 hover:bg-indigo-50/30 dark:hover:bg-indigo-900/20 transition-all group shadow-sm"
               >
                 <div className="text-indigo-600 dark:text-indigo-400 font-black text-xl mb-1">+{pack.credits}</div>
@@ -130,7 +130,7 @@ const BillingScreen: React.FC<BillingScreenProps> = ({ currentCredits, currentPl
       </div>
 
       <button onClick={onBack} className="w-full py-2 text-slate-400 font-bold hover:text-slate-600 transition-colors text-xs uppercase tracking-widest">
-        <i className="fas fa-arrow-left mr-2"></i> Return to Dashboard
+        <i className="fas fa-arrow-left mr-2"></i> Nazad na meni
       </button>
 
       {/* Payment Modal */}
@@ -139,20 +139,20 @@ const BillingScreen: React.FC<BillingScreenProps> = ({ currentCredits, currentPl
           <div className="bg-white dark:bg-slate-900 w-full max-w-md rounded-[2.5rem] shadow-2xl overflow-hidden animate-in zoom-in duration-300">
             <div className="bg-indigo-600 p-8 text-white relative">
               <button onClick={() => setCheckoutItem(null)} className="absolute top-6 right-6 text-white/60 hover:text-white"><i className="fas fa-times"></i></button>
-              <h3 className="text-2xl font-black mb-1">Checkout</h3>
-              <p className="text-indigo-100 text-sm">Secure Payment for <strong>{checkoutItem.name}</strong></p>
+              <h3 className="text-2xl font-black mb-1">Plaćanje</h3>
+              <p className="text-indigo-100 text-sm">Sigurno plaćanje za <strong>{checkoutItem.name}</strong></p>
               <div className="mt-6 flex items-baseline">
                 <span className="text-4xl font-black">{checkoutItem.price}</span>
-                <span className="ml-2 text-indigo-200 text-sm">{checkoutItem.type === 'PLAN' ? 'Subscription' : 'One-time'}</span>
+                <span className="ml-2 text-indigo-200 text-sm">{checkoutItem.type === 'PLAN' ? 'Pretplata' : 'Jednokratno'}</span>
               </div>
             </div>
 
             <form onSubmit={handlePayment} className="p-8 space-y-5">
               <div className="space-y-1">
-                <label className="text-[10px] font-black uppercase text-slate-400 dark:text-slate-500 ml-1">Cardholder Name</label>
+                <label className="text-[10px] font-black uppercase text-slate-400 dark:text-slate-500 ml-1">Ime na kartici</label>
                 <input 
                   required
-                  placeholder="e.g. Dusan Jovanovic"
+                  placeholder="npr. Dušan Jovanović"
                   className="w-full p-3.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-sm focus:ring-2 focus:ring-indigo-500 outline-none dark:text-slate-100"
                   value={cardDetails.name}
                   onChange={e => setCardDetails({...cardDetails, name: e.target.value})}
@@ -160,7 +160,7 @@ const BillingScreen: React.FC<BillingScreenProps> = ({ currentCredits, currentPl
               </div>
 
               <div className="space-y-1">
-                <label className="text-[10px] font-black uppercase text-slate-400 dark:text-slate-500 ml-1">Card Number</label>
+                <label className="text-[10px] font-black uppercase text-slate-400 dark:text-slate-500 ml-1">Broj kartice</label>
                 <div className="relative">
                   <input 
                     required
@@ -179,7 +179,7 @@ const BillingScreen: React.FC<BillingScreenProps> = ({ currentCredits, currentPl
 
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-1">
-                  <label className="text-[10px] font-black uppercase text-slate-400 dark:text-slate-500 ml-1">Expiry Date</label>
+                  <label className="text-[10px] font-black uppercase text-slate-400 dark:text-slate-500 ml-1">Datum isteka</label>
                   <input 
                     required
                     placeholder="MM / YY"
@@ -212,12 +212,12 @@ const BillingScreen: React.FC<BillingScreenProps> = ({ currentCredits, currentPl
                 ) : (
                   <i className="fas fa-shield-alt text-emerald-400"></i>
                 )}
-                <span>{isProcessing ? 'Authorizing Card...' : `Pay ${checkoutItem.price}`}</span>
+                <span>{isProcessing ? 'Autorizacija kartice...' : `Plati ${checkoutItem.price}`}</span>
               </button>
               
               <div className="flex items-center justify-center space-x-2 text-slate-400 dark:text-slate-500 text-[9px] uppercase font-black">
                 <i className="fas fa-lock"></i>
-                <span>SSL Encrypted Transaction</span>
+                <span>SSL kriptovana transakcija</span>
               </div>
             </form>
           </div>

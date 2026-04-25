@@ -86,12 +86,12 @@ const HistoryView: React.FC<HistoryViewProps> = ({ onBack }) => {
       <div className="flex items-center justify-between">
         <div>
           <h2 className="text-2xl font-black text-slate-800 dark:text-slate-100">
-            {viewMode === 'entries' ? 'Entry Logs' : 'Database Explorer'}
+            {viewMode === 'entries' ? 'Istorija prijava' : 'Pregled baze'}
           </h2>
           <p className="text-slate-500 dark:text-slate-400 text-xs mt-1">
             {viewMode === 'entries' 
-              ? 'Records of guest registrations.' 
-              : 'Browsing eturista.db reference data.'}
+              ? 'Zapisi o registracijama gostiju.' 
+              : 'Pregled referentnih podataka eturista.db.'}
           </p>
         </div>
         <div className="flex items-center space-x-2">
@@ -100,13 +100,13 @@ const HistoryView: React.FC<HistoryViewProps> = ({ onBack }) => {
               onClick={() => setViewMode('entries')}
               className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${viewMode === 'entries' ? 'bg-white dark:bg-slate-700 shadow-sm text-indigo-600 dark:text-indigo-400' : 'text-slate-500'}`}
             >
-              Entries
+              Prijave
             </button>
             <button 
               onClick={() => setViewMode('db')}
               className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${viewMode === 'db' ? 'bg-white dark:bg-slate-700 shadow-sm text-indigo-600 dark:text-indigo-400' : 'text-slate-500'}`}
             >
-              DB Tables
+              DB Tabele
             </button>
           </div>
           <button 
@@ -124,7 +124,7 @@ const HistoryView: React.FC<HistoryViewProps> = ({ onBack }) => {
             <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 w-4 h-4" />
             <input 
               type="text"
-              placeholder="Search by name or document..."
+              placeholder="Pretraži po imenu ili dokumentu..."
               className="w-full pl-11 pr-4 py-3 bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 rounded-2xl text-sm focus:ring-2 focus:ring-indigo-500 outline-none dark:text-slate-100"
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
@@ -135,14 +135,14 @@ const HistoryView: React.FC<HistoryViewProps> = ({ onBack }) => {
             {isLoading ? (
               <div className="py-20 text-center space-y-4">
                 <div className="w-12 h-12 border-4 border-indigo-600 border-t-transparent rounded-full animate-spin mx-auto"></div>
-                <p className="text-slate-400 text-sm font-bold uppercase tracking-widest">Loading Logs...</p>
+                <p className="text-slate-400 text-sm font-bold uppercase tracking-widest">Učitavanje zapisa...</p>
               </div>
             ) : filteredEntries.length === 0 ? (
               <div className="py-20 text-center space-y-4 bg-slate-50 dark:bg-slate-800/30 rounded-[2rem] border-2 border-dashed border-slate-200 dark:border-slate-700">
                 <div className="w-16 h-16 bg-slate-100 dark:bg-slate-800 rounded-full flex items-center justify-center mx-auto text-slate-300">
                   <Clock size={32} />
                 </div>
-                <p className="text-slate-500 dark:text-slate-400 font-medium">No logs found.</p>
+                <p className="text-slate-500 dark:text-slate-400 font-medium">Nema pronađenih zapisa.</p>
               </div>
             ) : (
               filteredEntries.map((entry) => (
@@ -161,7 +161,7 @@ const HistoryView: React.FC<HistoryViewProps> = ({ onBack }) => {
                       </div>
                     </div>
                     <div className="text-right">
-                      <span className="text-[10px] font-black text-indigo-500 dark:text-indigo-400 uppercase tracking-tighter block">Logged</span>
+                      <span className="text-[10px] font-black text-indigo-500 dark:text-indigo-400 uppercase tracking-tighter block">Zapisano</span>
                       <span className="text-[10px] text-slate-400 dark:text-slate-500 font-bold">{formatDate(entry.timestamp)}</span>
                     </div>
                   </div>
@@ -205,17 +205,17 @@ const HistoryView: React.FC<HistoryViewProps> = ({ onBack }) => {
             {isDbLoading ? (
               <div className="py-20 text-center space-y-4">
                 <div className="w-10 h-10 border-4 border-indigo-600 border-t-transparent rounded-full animate-spin mx-auto"></div>
-                <p className="text-slate-400 text-[10px] font-black uppercase tracking-widest">Querying Database...</p>
+                <p className="text-slate-400 text-[10px] font-black uppercase tracking-widest">Upit baze...</p>
               </div>
             ) : tableData.length === 0 ? (
               <div className="py-20 text-center text-slate-400 text-sm italic">
-                No data in this table.
+                Nema podataka u ovoj tabeli.
               </div>
             ) : (
               <>
                 <div className="px-4 py-2 bg-slate-100 dark:bg-slate-800 border-b border-slate-200 dark:border-slate-700 flex justify-between items-center">
-                  <span className="text-[10px] font-black text-slate-500 uppercase">Table: {selectedTable}</span>
-                  <span className="text-[10px] font-black text-indigo-600 dark:text-indigo-400 uppercase">{tableData.length} Rows Total</span>
+                  <span className="text-[10px] font-black text-slate-500 uppercase">Tabela: {selectedTable}</span>
+                  <span className="text-[10px] font-black text-indigo-600 dark:text-indigo-400 uppercase">Ukupno redova: {tableData.length}</span>
                 </div>
                 <div className="overflow-x-auto max-h-[400px] custom-scrollbar">
                 <table className="w-full text-left border-collapse">
@@ -251,7 +251,7 @@ const HistoryView: React.FC<HistoryViewProps> = ({ onBack }) => {
         onClick={onBack}
         className="w-full py-4 bg-slate-900 dark:bg-slate-800 text-white font-bold rounded-2xl hover:bg-black transition-all"
       >
-        Back to Dashboard
+        Nazad na meni
       </button>
     </div>
   );

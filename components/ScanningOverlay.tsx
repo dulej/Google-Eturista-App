@@ -20,7 +20,7 @@ const ScanningOverlay: React.FC = () => {
           {/* MRZ Target Area */}
           <div className="absolute bottom-4 left-4 right-4 h-16 border-2 border-indigo-500 dark:border-indigo-400 border-dashed rounded-lg bg-indigo-50/50 dark:bg-indigo-900/20 flex items-center justify-center">
              <span className="text-[10px] font-bold text-indigo-600 dark:text-indigo-400 uppercase tracking-widest text-center px-2">
-                Align MRZ Lines Here
+                Poravnajte MRZ linije ovde
              </span>
           </div>
 
@@ -35,9 +35,9 @@ const ScanningOverlay: React.FC = () => {
       </div>
       
       <div className="text-center space-y-2">
-        <h3 className="text-xl font-bold text-slate-800 dark:text-slate-100">Analyzing MRZ Data</h3>
+        <h3 className="text-xl font-bold text-slate-800 dark:text-slate-100">Analiziranje MRZ podataka</h3>
         <p className="text-slate-500 dark:text-slate-400 text-sm max-w-xs mx-auto">
-          Our AI is decoding the Machine Readable Zone for 100% registration accuracy.
+          Naš AI dekodira mašinski čitljivu zonu za 100% tačnost registracije.
         </p>
       </div>
 

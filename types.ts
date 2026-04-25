@@ -1,37 +1,50 @@
 
 export enum DocumentType {
-  PASSPORT = 'Passport',
-  ID_CARD = 'Identity Card',
-  DRIVERS_LICENSE = 'Drivers License',
-  OTHER = 'Other'
+  PASSPORT = 'Pasoš',
+  ID_CARD = 'Lična karta',
+  DRIVERS_LICENSE = 'Vozačka dozvola',
+  OTHER = 'Ostalo'
 }
 
-export enum DocumentCategory {
-  PASSPORT = 'PASSPORT',
-  ID_CARD = 'ID_CARD'
-}
+export type Step = 'LOGIN' | 'SELECT_OBJECT' | 'DASHBOARD' | 'PDF_SETTINGS' | 'BILLING' | 'SELECT_IMAGE' | 'SCANNING' | 'REVIEW_DATA' | 'SUCCESS' | 'GENERATE_PDF' | 'HISTORY';
 
 export enum Gender {
-  MALE = 'Male',
-  FEMALE = 'Female',
-  OTHER = 'Other'
+  MALE = 'Muški',
+  FEMALE = 'Ženski'
 }
 
 export interface GuestData {
   firstName: string;
   lastName: string;
   dateOfBirth: string; // ISO format
-  placeOfBirth: string;
   countryOfBirth: string;
   nationality: string;
   documentType: DocumentType;
-  documentNumber: string;
+  documentNumber?: string;
   issuingCountry: string;
   expiryDate: string; // ISO format
   gender: Gender;
   arrivalDate: string;
   departureDate?: string;
   rawMrz?: string; // Machine Readable Zone raw string
+  
+  // New fields for Serbian guests
+  isDomestic: boolean;
+  jmbg?: string;
+  residenceCountry?: string;
+  municipalityOfResidence?: string;
+  placeOfResidence?: string;
+  serviceType?: string;
+  arrivalMode?: string;
+  stayReason?: string;
+  arrivalTime?: string;
+  plannedDepartureDate?: string;
+  issuingAuthority?: string;
+  documentIssueDate?: string;
+  entryDateToSerbia?: string;
+  entryPlaceToSerbia?: string;
+  placeOfBirth?: string;
+  municipalityOfBirth?: string;
 }
 
 export interface PdfCustomization {
@@ -74,5 +87,3 @@ export interface ErrorLog {
   stack: string;
   context: string;
 }
-
-export type Step = 'LOGIN' | 'SELECT_OBJECT' | 'DASHBOARD' | 'PDF_SETTINGS' | 'BILLING' | 'SELECT_TYPE' | 'SELECT_IMAGE' | 'SCANNING' | 'REVIEW_DATA' | 'SUCCESS' | 'GENERATE_PDF' | 'HISTORY';

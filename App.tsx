@@ -11,7 +11,7 @@ import ScanningOverlay from './components/ScanningOverlay';
 import GuestForm from './components/GuestForm';
 import PdfFiller from './components/PdfFiller';
 import HistoryView from './components/HistoryView';
-import { Step, GuestData, DocumentCategory, PdfCustomization, PlanType } from './types';
+import { Step, GuestData, PdfCustomization, PlanType } from './types';
 import { extractGuestDataFromId, submitToETurista, loginToETurista, getSmeštajneJedinice } from './services/geminiService';
 
 const App: React.FC = () => {
@@ -20,7 +20,6 @@ const App: React.FC = () => {
   const [userId, setUserId] = useState<number | null>(null);
   const [accommodations, setAccommodations] = useState<any[]>([]);
   const [activeObject, setActiveObject] = useState<any>(null);
-  const [category, setCategory] = useState<DocumentCategory>(DocumentCategory.PASSPORT);
   const [guestData, setGuestData] = useState<GuestData | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -96,30 +95,19 @@ const App: React.FC = () => {
         setSessionToken(auth.token);
         setUserId(auth.id);
         
-        // Audit log
-        fetch('/api/logs/audit', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            action: 'FRONTEND_LOGIN_SUCCESS',
-            userId: auth.id,
-            details: `User ${user} logged in from frontend`
-          })
-        }).catch(console.error);
-
         const objects = await getSmeštajneJedinice(auth.token, auth.id);
         if (objects && objects.length > 0) {
           setAccommodations(objects);
           setStep('SELECT_OBJECT');
           return true;
         } else {
-          setError("No accommodation objects found for this account.");
+          setError("Nisu pronađeni smeštajni objekti za ovaj nalog.");
           return false;
         }
       }
       return false;
     } catch (err: any) {
-      setError(err.message || "Login failed");
+      setError(err.message || "Prijava nije uspela");
       throw err;
     }
   };
@@ -139,17 +127,12 @@ const App: React.FC = () => {
     setStep('LOGIN');
   };
 
-  const handleTypeSelection = (cat: DocumentCategory) => {
+  const handleImagesReady = useCallback(async (images: string[]) => {
     if (!hasUnlimited && credits < 1) {
-      setError("Insufficient credits. 1 credit covers scanning and registration.");
+      setError("Nedovoljno kredita. 1 kredit pokriva skeniranje i registraciju.");
       setStep('BILLING');
       return;
     }
-    setCategory(cat);
-    setStep('SELECT_IMAGE');
-  };
-
-  const handleImagesReady = useCallback(async (images: string[]) => {
     setStep('SCANNING');
     setError(null);
     try {
@@ -158,26 +141,26 @@ const App: React.FC = () => {
       setStep('REVIEW_DATA');
     } catch (err) {
       console.error("Extraction error:", err);
-      setError("Failed to extract data. Please ensure the MRZ area is clear and visible.");
+      setError("Neuspešno izvlačenje podataka. Proverite da li je MRZ zona jasna i vidljiva.");
       setStep('SELECT_IMAGE');
     }
   }, []);
 
   const handleFinalRegistration = async () => {
     if (!hasUnlimited && credits < 1) {
-      setError("Insufficient credits for Registration.");
+      setError("Nedovoljno kredita za registraciju.");
       setStep('BILLING');
       return;
     }
 
     if (!sessionToken || !activeObject || !guestData) {
-      setError("Session or data lost. Please start again.");
+      setError("Sesija ili podaci su izgubljeni. Molimo počnite ponovo.");
       setStep('LOGIN');
       return;
     }
 
     const objekatId = activeObject.id;
-    const objekatNaziv = activeObject.name || "Property";
+    const objekatNaziv = activeObject.name || "Objekat";
     setIsSubmitting(true);
     setError(null);
     try {
@@ -190,7 +173,7 @@ const App: React.FC = () => {
           body: JSON.stringify({
             action: 'FRONTEND_REGISTRATION_SUCCESS',
             userId: userId,
-            details: `Guest ${guestData.firstName} ${guestData.lastName} registered successfully`
+            details: `Gost ${guestData.firstName} ${guestData.lastName} uspešno registrovan`
           })
         }).catch(console.error);
 
@@ -217,10 +200,10 @@ const App: React.FC = () => {
         }
         setStep('SUCCESS');
       } else {
-        setError(`eTurista Registration Failed: ${result.message}`);
+        setError(`eTurista registracija nije uspela: ${result.message}`);
       }
     } catch (err: any) {
-      setError(`Unexpected error: ${err.message}`);
+      setError(`Neočekivana greška: ${err.message}`);
     } finally {
       setIsSubmitting(false);
     }
@@ -261,8 +244,8 @@ const App: React.FC = () => {
           {step === 'SELECT_OBJECT' && <ObjectSelector objects={accommodations} onSelect={handleObjectSelect} onBack={handleLogout} />}
           {step === 'DASHBOARD' && activeObject && (
             <Dashboard 
-              objectName={activeObject.naziv || activeObject.Naziv || "Property"} 
-              onStartCheckin={() => setStep('SELECT_TYPE')}
+              objectName={activeObject.naziv || activeObject.Naziv || "Objekat"} 
+              onStartCheckin={() => setStep('SELECT_IMAGE')}
               onPdfSettings={() => setStep('PDF_SETTINGS')}
               onBilling={() => setStep('BILLING')}
               onHistory={() => setStep('HISTORY')}
@@ -291,48 +274,7 @@ const App: React.FC = () => {
             />
           )}
 
-          {step === 'SELECT_TYPE' && (
-            <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
-              <div className="text-center">
-                <h2 className="text-2xl font-bold text-slate-800 dark:text-slate-100">New Guest Check-in</h2>
-                <p className="text-slate-500 dark:text-slate-400 mt-1">1 credit covers scanning + registration.</p>
-              </div>
-              <div className="grid grid-cols-1 gap-4">
-                <button
-                  onClick={() => handleTypeSelection(DocumentCategory.PASSPORT)}
-                  className="flex items-center p-6 bg-white dark:bg-slate-800 border-2 border-slate-100 dark:border-slate-700 rounded-3xl hover:border-indigo-500 dark:hover:border-indigo-400 hover:bg-indigo-50/30 dark:hover:bg-indigo-900/20 transition-all group shadow-sm"
-                >
-                  <div className="w-14 h-14 bg-indigo-100 dark:bg-indigo-900/40 rounded-2xl flex items-center justify-center mr-4 group-hover:bg-indigo-200 dark:group-hover:bg-indigo-800/60 transition-colors">
-                    <i className="fas fa-passport text-2xl text-indigo-600 dark:text-indigo-400"></i>
-                  </div>
-                  <div className="text-left flex-1">
-                    <span className="block font-bold text-slate-800 dark:text-slate-100">Passport</span>
-                    <span className="text-xs text-slate-400 dark:text-slate-500">Full cycle extraction</span>
-                  </div>
-                  {!hasUnlimited && <span className="text-[10px] font-black text-indigo-500 dark:text-indigo-400 uppercase mr-4">1 Credit</span>}
-                  <i className="fas fa-chevron-right text-slate-300 dark:text-slate-600 group-hover:text-indigo-400"></i>
-                </button>
-
-                <button
-                  onClick={() => handleTypeSelection(DocumentCategory.ID_CARD)}
-                  className="flex items-center p-6 bg-white dark:bg-slate-800 border-2 border-slate-100 dark:border-slate-700 rounded-3xl hover:border-indigo-500 dark:hover:border-indigo-400 hover:bg-indigo-50/30 dark:hover:bg-indigo-900/20 transition-all group shadow-sm"
-                >
-                  <div className="w-14 h-14 bg-emerald-100 dark:bg-emerald-900/40 rounded-2xl flex items-center justify-center mr-4 group-hover:bg-emerald-200 dark:group-hover:bg-emerald-800/60 transition-colors">
-                    <i className="fas fa-id-card text-2xl text-emerald-600 dark:text-emerald-400"></i>
-                  </div>
-                  <div className="text-left flex-1">
-                    <span className="block font-bold text-slate-800 dark:text-slate-100">Identity Card</span>
-                    <span className="text-xs text-slate-400 dark:text-slate-500">Front + Back analysis</span>
-                  </div>
-                  {!hasUnlimited && <span className="text-[10px] font-black text-indigo-500 dark:text-indigo-400 uppercase mr-4">1 Credit</span>}
-                  <i className="fas fa-chevron-right text-slate-300 dark:text-slate-600 group-hover:text-emerald-400"></i>
-                </button>
-              </div>
-              <button onClick={() => setStep('DASHBOARD')} className="w-full text-xs font-bold text-slate-400 dark:text-slate-500 hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors py-2 uppercase tracking-widest"><i className="fas fa-arrow-left mr-1"></i> Back to Menu</button>
-            </div>
-          )}
-
-          {step === 'SELECT_IMAGE' && <ImageSelector category={category} onImagesReady={handleImagesReady} onBack={() => setStep('SELECT_TYPE')} />}
+          {step === 'SELECT_IMAGE' && <ImageSelector onImagesReady={handleImagesReady} onBack={() => setStep('DASHBOARD')} />}
           {step === 'SCANNING' && <ScanningOverlay />}
           {step === 'REVIEW_DATA' && guestData && (
             <GuestForm 
@@ -340,7 +282,7 @@ const App: React.FC = () => {
               onSubmit={d => { setGuestData(d); setStep('GENERATE_PDF'); }} 
               onCancel={() => setStep('SELECT_IMAGE')} 
               isSubmitting={false} 
-              submitLabel="Confirm & Go to Invoice"
+              submitLabel="Potvrdi i idi na račun"
               sessionToken={sessionToken!}
             />
           )}
@@ -352,13 +294,13 @@ const App: React.FC = () => {
                 <i className="fas fa-check text-4xl"></i>
               </div>
               <div className="space-y-2">
-                <h2 className="text-3xl font-bold text-slate-800 dark:text-slate-100">Check-in Complete!</h2>
-                <p className="text-slate-500 dark:text-slate-400">Guest registered and session finalized.</p>
+                <h2 className="text-3xl font-bold text-slate-800 dark:text-slate-100">Prijava završena!</h2>
+                <p className="text-slate-500 dark:text-slate-400">Gost je registrovan i sesija je završena.</p>
               </div>
               <div className="pt-4">
                 <button onClick={() => { setStep('DASHBOARD'); setGuestData(null); }} className="w-full py-4 bg-slate-800 dark:bg-indigo-600 text-white font-bold rounded-2xl shadow-lg hover:bg-slate-900 dark:hover:bg-indigo-700 transition-all flex items-center justify-center space-x-2">
                   <i className="fas fa-home"></i>
-                  <span>Return to Dashboard</span>
+                  <span>Povratak na glavni meni</span>
                 </button>
               </div>
             </div>

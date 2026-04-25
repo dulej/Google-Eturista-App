@@ -22,11 +22,15 @@ export const extractGuestDataFromId = async (images: string[]): Promise<GuestDat
         ...parts,
         {
           text: `You are a specialist in document OCR for the Serbian eTurista system. 
-          1. Locate the Machine Readable Zone (MRZ).
-          2. Extract names, document number, and dates.
-          3. Pay special attention to 'Place of Birth' and 'Country of Birth' (State of birth).
-          4. Return a clean JSON object. Standardize dates to YYYY-MM-DD.
-          5. Map gender to 'Male' or 'Female'.`,
+          1. Identify if the document is a Passport or an Identity Card.
+          2. Locate the Machine Readable Zone (MRZ) if present.
+          3. Extract names, document number, and dates.
+          4. Pay special attention to 'Country of Birth' (State of birth), 'JMBG' (13-digit number for Serbian citizens), and 'Issuing Authority' (the place where the document was issued, e.g., 'PU NIS', 'SUP BEOGRAD').
+          5. Extract 'Place of Birth' (Mesto rođenja) and 'Municipality of Birth' (Opština rođenja) if visible.
+          6. Identify if the document is Serbian (Republic of Serbia). Set isDomestic to true if it is.
+          7. Return a clean JSON object. Standardize dates to YYYY-MM-DD.
+          8. Map gender to 'Male' or 'Female'.
+          9. For documentType, return exactly 'Passport' or 'Identity Card'.`,
         },
       ],
     },
@@ -38,17 +42,21 @@ export const extractGuestDataFromId = async (images: string[]): Promise<GuestDat
           firstName: { type: Type.STRING },
           lastName: { type: Type.STRING },
           dateOfBirth: { type: Type.STRING },
-          placeOfBirth: { type: Type.STRING, description: 'City or town of birth' },
           countryOfBirth: { type: Type.STRING, description: 'Country or State of birth' },
           nationality: { type: Type.STRING },
-          documentType: { type: Type.STRING },
+          documentType: { type: Type.STRING, enum: ['Passport', 'Identity Card'] },
           documentNumber: { type: Type.STRING },
           issuingCountry: { type: Type.STRING },
           expiryDate: { type: Type.STRING },
           gender: { type: Type.STRING },
+          jmbg: { type: Type.STRING, description: '13-digit Serbian JMBG if available' },
+          isDomestic: { type: Type.BOOLEAN, description: 'True if Serbian document' },
+          issuingAuthority: { type: Type.STRING, description: 'The authority that issued the document' },
+          placeOfBirth: { type: Type.STRING, description: 'City or town of birth' },
+          municipalityOfBirth: { type: Type.STRING, description: 'Municipality of birth' },
           rawMrz: { type: Type.STRING }
         },
-        required: ['firstName', 'lastName', 'documentNumber'],
+        required: ['firstName', 'lastName', 'documentNumber', 'documentType'],
       },
     },
   });
@@ -60,7 +68,6 @@ export const extractGuestDataFromId = async (images: string[]): Promise<GuestDat
     firstName: parsed.firstName || '',
     lastName: parsed.lastName || '',
     dateOfBirth: parsed.dateOfBirth || '',
-    placeOfBirth: parsed.placeOfBirth || '',
     countryOfBirth: parsed.countryOfBirth || '',
     nationality: parsed.nationality || '',
     documentType: (parsed.documentType as DocumentType) || DocumentType.PASSPORT,
@@ -69,6 +76,11 @@ export const extractGuestDataFromId = async (images: string[]): Promise<GuestDat
     expiryDate: parsed.expiryDate || '',
     gender: (parsed.gender === 'Female' ? Gender.FEMALE : Gender.MALE),
     arrivalDate: new Date().toISOString().split('T')[0],
+    isDomestic: parsed.isDomestic ?? true,
+    jmbg: parsed.jmbg || '',
+    issuingAuthority: parsed.issuingAuthority || '',
+    placeOfBirth: parsed.placeOfBirth || '',
+    municipalityOfBirth: parsed.municipalityOfBirth || '',
     rawMrz: parsed.rawMrz || '',
   };
 };

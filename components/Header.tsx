@@ -37,7 +37,7 @@ const Header: React.FC<HeaderProps> = ({
           <button 
             onClick={onToggleTheme}
             className="w-10 h-10 rounded-full flex items-center justify-center bg-slate-800 hover:bg-slate-700 border border-slate-700 transition-all text-amber-400"
-            title={isDarkMode ? "Switch to Light Mode" : "Switch to Dark Mode"}
+            title={isDarkMode ? "Prebaci na svetli režim" : "Prebaci na tamni režim"}
           >
             <i className={`fas ${isDarkMode ? 'fa-sun' : 'fa-moon'}`}></i>
           </button>
@@ -51,10 +51,10 @@ const Header: React.FC<HeaderProps> = ({
                 <i className="fas fa-coins text-amber-400 text-xs"></i>
                 <div className="flex flex-col items-start leading-none">
                   <span className="text-[10px] font-bold">
-                    {isUnlimited ? 'Unlimited' : credits}
+                    {isUnlimited ? 'Neograničeno' : credits}
                   </span>
                   <span className="text-[8px] text-slate-500 uppercase font-black">
-                    {isUnlimited ? 'Plan Active' : 'Credits'}
+                    {isUnlimited ? 'Plan aktivan' : 'Krediti'}
                   </span>
                 </div>
                 <i className="fas fa-plus-circle text-indigo-400 text-[10px]"></i>
@@ -63,7 +63,7 @@ const Header: React.FC<HeaderProps> = ({
               <button 
                 onClick={onLogout}
                 className="text-slate-400 hover:text-white p-2 transition-colors"
-                title="Logout"
+                title="Odjavi se"
               >
                 <i className="fas fa-power-off"></i>
               </button>
@@ -71,7 +71,7 @@ const Header: React.FC<HeaderProps> = ({
           )}
           {!isLoggedIn && (
             <div className="text-[10px] bg-indigo-600/20 text-indigo-400 border border-indigo-600/30 px-3 py-1 rounded-full uppercase font-bold tracking-widest">
-              Business Portal
+              Poslovni portal
             </div>
           )}
         </div>

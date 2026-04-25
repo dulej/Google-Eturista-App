@@ -1,9 +1,7 @@
 
 import React, { useRef, useState } from 'react';
-import { DocumentCategory } from '../types';
 
 interface ImageSelectorProps {
-  category: DocumentCategory;
   onImagesReady: (images: string[]) => void;
   onBack: () => void;
 }
@@ -49,14 +47,14 @@ const ImageSlot: React.FC<{
                 className="bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 px-3 py-1.5 rounded-lg text-xs font-bold shadow-lg flex items-center space-x-1"
               >
                 <i className="fas fa-camera"></i>
-                <span>Rescan</span>
+                <span>Ponovo skeniraj</span>
               </button>
               <button 
                 onClick={() => galleryInputRef.current?.click()}
                 className="bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 px-3 py-1.5 rounded-lg text-xs font-bold shadow-lg flex items-center space-x-1"
               >
                 <i className="fas fa-image"></i>
-                <span>Gallery</span>
+                <span>Galerija</span>
               </button>
             </div>
           </>
@@ -72,14 +70,14 @@ const ImageSlot: React.FC<{
                 className="flex-1 bg-indigo-600 hover:bg-indigo-700 text-white py-2 px-3 rounded-xl text-xs font-bold shadow-sm flex items-center justify-center space-x-2 transition-all active:scale-95"
               >
                 <i className="fas fa-camera"></i>
-                <span>Scan</span>
+                <span>Skeniraj</span>
               </button>
               <button 
                 onClick={() => galleryInputRef.current?.click()}
                 className="flex-1 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 hover:border-indigo-300 dark:hover:border-indigo-500 text-slate-600 dark:text-slate-400 py-2 px-3 rounded-xl text-xs font-bold shadow-sm flex items-center justify-center space-x-2 transition-all active:scale-95"
               >
                 <i className="fas fa-image"></i>
-                <span>Gallery</span>
+                <span>Galerija</span>
               </button>
             </div>
           </div>
@@ -106,17 +104,14 @@ const ImageSlot: React.FC<{
   );
 };
 
-const ImageSelector: React.FC<ImageSelectorProps> = ({ category, onImagesReady, onBack }) => {
-  const [frontImage, setFrontImage] = useState<string | null>(null);
-  const [backImage, setBackImage] = useState<string | null>(null);
+const ImageSelector: React.FC<ImageSelectorProps> = ({ onImagesReady, onBack }) => {
+  const [documentImage, setDocumentImage] = useState<string | null>(null);
 
-  const isComplete = category === DocumentCategory.PASSPORT ? !!frontImage : (!!frontImage && !!backImage);
+  const isComplete = !!documentImage;
 
   const handleFinish = () => {
     if (isComplete) {
-      const images = [frontImage!];
-      if (category === DocumentCategory.ID_CARD) images.push(backImage!);
-      onImagesReady(images);
+      onImagesReady([documentImage!]);
     }
   };
 
@@ -129,35 +124,20 @@ const ImageSelector: React.FC<ImageSelectorProps> = ({ category, onImagesReady, 
           </button>
           <div>
             <h2 className="text-xl font-extrabold text-slate-800 dark:text-slate-100 leading-tight">
-              {category === DocumentCategory.PASSPORT ? 'Passport Scan' : 'ID Card Scan'}
+              Skeniranje dokumenta
             </h2>
-            <p className="text-slate-400 dark:text-slate-500 text-[10px] font-bold uppercase tracking-widest">Step 2: Capture Document</p>
+            <p className="text-slate-400 dark:text-slate-500 text-[10px] font-bold uppercase tracking-widest">Korak 2: Fotografisanje dokumenta</p>
           </div>
-        </div>
-        <div className="flex -space-x-2">
-            <div className={`w-8 h-8 rounded-full border-2 border-white dark:border-slate-900 flex items-center justify-center text-[10px] font-bold ${frontImage ? 'bg-indigo-600 text-white' : 'bg-slate-200 dark:bg-slate-800 text-slate-50 dark:text-slate-500'}`}>1</div>
-            {category === DocumentCategory.ID_CARD && (
-                <div className={`w-8 h-8 rounded-full border-2 border-white dark:border-slate-900 flex items-center justify-center text-[10px] font-bold ${backImage ? 'bg-indigo-600 text-white' : 'bg-slate-200 dark:bg-slate-800 text-slate-50 dark:text-slate-500'}`}>2</div>
-            )}
         </div>
       </div>
 
-      <div className={`grid gap-6 ${category === DocumentCategory.ID_CARD ? 'grid-cols-1' : 'grid-cols-1'}`}>
+      <div className="grid gap-6 grid-cols-1">
         <ImageSlot 
-          label={category === DocumentCategory.PASSPORT ? "Photo Page (including MRZ)" : "Front Side"}
-          image={frontImage}
-          onSelect={setFrontImage}
+          label="Pasoš ili Zadnja strana lične karte"
+          image={documentImage}
+          onSelect={setDocumentImage}
           icon="fas fa-id-card"
         />
-        
-        {category === DocumentCategory.ID_CARD && (
-          <ImageSlot 
-            label="Back Side (MRZ Area)"
-            image={backImage}
-            onSelect={setBackImage}
-            icon="fas fa-barcode"
-          />
-        )}
       </div>
 
       <div className="space-y-4 pt-4">
@@ -169,13 +149,13 @@ const ImageSelector: React.FC<ImageSelectorProps> = ({ category, onImagesReady, 
           }`}
         >
           <i className="fas fa-wand-magic-sparkles"></i>
-          <span>Extract Data with AI</span>
+          <span>Izvuci podatke pomoću AI</span>
         </button>
         
         <div className="bg-amber-50 dark:bg-amber-900/20 p-4 rounded-xl border border-amber-100 dark:border-amber-900/30 flex items-start space-x-3">
           <i className="fas fa-circle-exclamation text-amber-500 dark:text-amber-400 mt-0.5"></i>
           <p className="text-[10px] text-amber-800 dark:text-amber-200 leading-normal font-medium">
-            Ensure document details are readable and not covered by glare. For ID cards, the <strong>Machine Readable Zone (MRZ)</strong> is typically on the back.
+            Uverite se da su detalji dokumenta čitljivi i da nema odsjaja. Za lične karte, <strong>Machine Readable Zone (MRZ)</strong> se nalazi na poleđini.
           </p>
         </div>
       </div>

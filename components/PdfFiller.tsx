@@ -27,7 +27,7 @@ const PdfFiller: React.FC<PdfFillerProps> = ({ guestData, initialCustomization, 
 
   const handleGeneratePdf = async () => {
     setIsProcessing(true);
-    setStatus("Generating invoice document...");
+    setStatus("Generisanje dokumenta računa...");
 
     try {
       const pdfBytes = await generateRegistrationPdf(guestData, customization);
@@ -44,10 +44,10 @@ const PdfFiller: React.FC<PdfFillerProps> = ({ guestData, initialCustomization, 
       URL.revokeObjectURL(url);
       
       setPdfGenerated(true);
-      setStatus("Invoice generated & downloaded!");
+      setStatus("Račun je generisan i preuzet!");
     } catch (error) {
       console.error(error);
-      setStatus("Error: Failed to generate PDF.");
+      setStatus("Greška: Neuspešno generisanje PDF-a.");
     } finally {
       setIsProcessing(false);
     }
@@ -62,17 +62,17 @@ const PdfFiller: React.FC<PdfFillerProps> = ({ guestData, initialCustomization, 
         <div className="w-16 h-16 bg-indigo-100 dark:bg-indigo-900/40 rounded-2xl flex items-center justify-center text-indigo-600 dark:text-indigo-400 mx-auto mb-4">
           <i className="fas fa-file-invoice text-2xl"></i>
         </div>
-        <h2 className="text-2xl font-bold text-slate-800 dark:text-slate-100">Registration Document</h2>
-        <p className="text-slate-500 dark:text-slate-400 mt-1">Review your document fields and sign.</p>
+        <h2 className="text-2xl font-bold text-slate-800 dark:text-slate-100">Registracioni dokument</h2>
+        <p className="text-slate-500 dark:text-slate-400 mt-1">Pregledajte polja dokumenta i potpišite se.</p>
       </div>
 
       <div className="flex items-center justify-between px-2">
-        <h3 className="text-sm font-bold text-slate-700 dark:text-slate-300">Invoice Customization</h3>
+        <h3 className="text-sm font-bold text-slate-700 dark:text-slate-300">Prilagođavanje računa</h3>
         <button 
           onClick={() => setShowCustomization(!showCustomization)}
           className="text-[10px] font-bold text-indigo-600 dark:text-indigo-400 uppercase tracking-widest hover:underline"
         >
-          {showCustomization ? 'Hide Options' : 'Edit for this Guest'}
+          {showCustomization ? 'Sakrij opcije' : 'Izmeni za ovog gosta'}
         </button>
       </div>
 
@@ -80,11 +80,11 @@ const PdfFiller: React.FC<PdfFillerProps> = ({ guestData, initialCustomization, 
         <div className="bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 rounded-[2rem] p-6 space-y-4 animate-in slide-in-from-top-2 duration-300">
           <div className="grid grid-cols-1 gap-3">
             <div>
-              <label className={labelClass}>Fizicko Lice (Naziv)</label>
+              <label className={labelClass}>Fizičko Lice (Naziv)</label>
               <input name="physicalPersonName" value={customization.physicalPersonName} onChange={handleCustomizationChange} className={inputClass} />
             </div>
             <div>
-              <label className={labelClass}>Adresa Fizickog Lica</label>
+              <label className={labelClass}>Adresa Fizičkog Lica</label>
               <input name="physicalPersonAddress" value={customization.physicalPersonAddress} onChange={handleCustomizationChange} className={inputClass} />
             </div>
             <div>
@@ -98,7 +98,7 @@ const PdfFiller: React.FC<PdfFillerProps> = ({ guestData, initialCustomization, 
           </div>
           
           <div>
-            <label className={labelClass}>Signature Pad</label>
+            <label className={labelClass}>Polje za potpis</label>
             <div className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl p-2">
               <SignaturePad 
                 onSave={(base64) => setCustomization(prev => ({ ...prev, signatureImage: base64 }))}
@@ -111,25 +111,25 @@ const PdfFiller: React.FC<PdfFillerProps> = ({ guestData, initialCustomization, 
 
       {!showCustomization && (
         <div className="bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 rounded-[2rem] p-6">
-          <h3 className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-4">Document Details:</h3>
+          <h3 className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-4">Detalji dokumenta:</h3>
           <div className="space-y-3">
             <div className="flex justify-between items-center text-xs pb-2 border-b border-slate-200/50 dark:border-slate-700/50">
-              <span className="text-slate-500 dark:text-slate-400 font-medium italic">Guest Name</span>
+              <span className="text-slate-500 dark:text-slate-400 font-medium italic">Ime gosta</span>
               <span className="font-bold text-slate-700 dark:text-slate-200">{guestData.firstName} {guestData.lastName}</span>
             </div>
             <div className="flex justify-between items-center text-xs pb-2 border-b border-slate-200/50 dark:border-slate-700/50">
-              <span className="text-slate-500 dark:text-slate-400 font-medium italic">Issuer</span>
+              <span className="text-slate-500 dark:text-slate-400 font-medium italic">Izdavalac</span>
               <span className="font-bold text-slate-700 dark:text-slate-200">{customization.physicalPersonName}</span>
             </div>
             <div className="flex justify-between items-center text-xs">
-              <span className="text-slate-500 dark:text-slate-400 font-medium italic">Signature status</span>
+              <span className="text-slate-500 dark:text-slate-400 font-medium italic">Status potpisa</span>
               {customization.signatureImage ? (
                 <span className="text-emerald-600 dark:text-emerald-400 font-bold flex items-center">
-                  <i className="fas fa-check-circle mr-1"></i> Added
+                  <i className="fas fa-check-circle mr-1"></i> Dodat
                 </span>
               ) : (
                 <span className="text-amber-500 dark:text-amber-400 font-bold flex items-center">
-                  <i className="fas fa-exclamation-circle mr-1"></i> Empty
+                  <i className="fas fa-exclamation-circle mr-1"></i> Prazno
                 </span>
               )}
             </div>
@@ -153,8 +153,8 @@ const PdfFiller: React.FC<PdfFillerProps> = ({ guestData, initialCustomization, 
             </div>
           )}
           <div className="text-center">
-            <p className="font-bold text-indigo-700 dark:text-indigo-300">Generate PDF Document</p>
-            <p className="text-[10px] text-indigo-400 dark:text-indigo-500 mt-1 uppercase tracking-widest font-bold">Step 1: Paperwork</p>
+            <p className="font-bold text-indigo-700 dark:text-indigo-300">Generiši PDF dokument</p>
+            <p className="text-[10px] text-indigo-400 dark:text-indigo-500 mt-1 uppercase tracking-widest font-bold">Korak 1: Dokumentacija</p>
           </div>
         </button>
       ) : (
@@ -163,15 +163,15 @@ const PdfFiller: React.FC<PdfFillerProps> = ({ guestData, initialCustomization, 
             <i className="fas fa-check text-xl"></i>
           </div>
           <div className="text-center">
-            <p className="text-sm font-bold">PDF Created & Downloaded</p>
-            <p className="text-[10px] opacity-70">Next: Finalize eTurista registration</p>
+            <p className="text-sm font-bold">PDF kreiran i preuzet</p>
+            <p className="text-[10px] opacity-70">Sledeće: Finalizacija eTurista prijave</p>
           </div>
         </div>
       )}
 
       {status && (
         <div className={`p-3 rounded-xl text-xs font-bold text-center border ${
-          status.includes('Error') ? 'bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 border-red-100 dark:border-red-900/30' : 'bg-indigo-50 dark:bg-indigo-900/20 text-indigo-700 dark:text-indigo-300 border-indigo-100 dark:border-indigo-900/30'
+          status.includes('Greška') ? 'bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 border-red-100 dark:border-red-900/30' : 'bg-indigo-50 dark:bg-indigo-900/20 text-indigo-700 dark:text-indigo-300 border-indigo-100 dark:border-indigo-900/30'
         }`}>
           {status}
         </div>
@@ -188,7 +188,7 @@ const PdfFiller: React.FC<PdfFillerProps> = ({ guestData, initialCustomization, 
           ) : (
             <i className="fas fa-cloud-upload-alt"></i>
           )}
-          <span>{isSubmittingRegistration ? 'Registering...' : 'Register with eTurista'}</span>
+          <span>{isSubmittingRegistration ? 'Registracija...' : 'Registruj na eTurista'}</span>
         </button>
 
         <button
@@ -197,7 +197,7 @@ const PdfFiller: React.FC<PdfFillerProps> = ({ guestData, initialCustomization, 
           className="w-full py-2 text-slate-400 dark:text-slate-500 font-bold hover:text-slate-600 dark:hover:text-slate-300 transition-colors text-xs uppercase tracking-widest"
         >
           <i className="fas fa-arrow-left mr-2"></i>
-          Back to review
+          Nazad na pregled
         </button>
       </div>
     </div>

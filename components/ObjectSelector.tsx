@@ -14,14 +14,14 @@ const ObjectSelector: React.FC<ObjectSelectorProps> = ({ objects, onSelect, onBa
         <div className="w-16 h-16 bg-indigo-100 dark:bg-indigo-900/40 rounded-2xl flex items-center justify-center text-indigo-600 dark:text-indigo-400 mx-auto mb-4">
           <i className="fas fa-hotel text-2xl"></i>
         </div>
-        <h2 className="text-2xl font-bold text-slate-800 dark:text-slate-100">Select Accommodation</h2>
-        <p className="text-slate-500 dark:text-slate-400 mt-1">Which property are you checking guests into?</p>
+        <h2 className="text-2xl font-bold text-slate-800 dark:text-slate-100">Izaberite smeštaj</h2>
+        <p className="text-slate-500 dark:text-slate-400 mt-1">U koji objekat prijavljujete goste?</p>
       </div>
 
       <div className="grid grid-cols-1 gap-3">
         {objects.map((obj) => {
           const id = obj.id;
-          const name = obj.name || `Object #${id}`;
+          const name = obj.name || `Objekat #${id}`;
           const address = obj.address || '';
           
           return (
@@ -48,7 +48,7 @@ const ObjectSelector: React.FC<ObjectSelectorProps> = ({ objects, onSelect, onBa
         className="w-full py-3 text-slate-500 font-bold hover:text-indigo-600 transition-colors text-sm"
       >
         <i className="fas fa-arrow-left mr-2"></i>
-        Change Account
+        Promeni nalog
       </button>
     </div>
   );
