@@ -11,7 +11,7 @@
  */
 
 import { GoogleGenAI } from '@google/genai';
-import { GuestData, DocumentType, Gender } from '../types';
+import { GuestData, DocumentType, Gender, Accommodation, AccommodationUnit } from '../types';
 
 // ─── Gemini setup ─────────────────────────────────────────────────────────────
 
@@ -22,10 +22,14 @@ const API_KEY = process.env.GEMINI_API_KEY as string;
 export async function loginToETurista(
   username: string,
   password: string,
+  environment: 'test' | 'prod' = 'test'
 ): Promise<{ token: string; id: number }> {
   const res = await fetch('/api/eturista/login', {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers: { 
+      'Content-Type': 'application/json',
+      'X-Environment': environment 
+    },
     body: JSON.stringify({ username, password }),
   });
 
@@ -40,9 +44,13 @@ export async function loginToETurista(
 export async function getAccommodations(
   token: string,
   userId: number,
-): Promise<{ id: number; jid: string; name: string; address?: string; type?: string }[]> {
+  environment: 'test' | 'prod' = 'test'
+): Promise<{ objects: Accommodation[] }> {
   const res = await fetch(`/api/eturista/accommodations?userId=${userId}`, {
-    headers: { Authorization: token },
+    headers: { 
+      Authorization: token,
+      'X-Environment': environment
+    },
   });
 
   const data = await res.json();
@@ -56,9 +64,15 @@ export async function getAccommodations(
 export async function getAccommodationUnits(
   token: string,
   accommodationId: number,
-): Promise<{ id: number; jid: number; number: string; floor: string; name: string }[]> {
-  const res = await fetch(`/api/eturista/accommodation-units?accommodationId=${accommodationId}`, {
-    headers: { Authorization: token },
+  jid?: string,
+  environment: 'test' | 'prod' = 'test'
+): Promise<AccommodationUnit[]> {
+  const url = `/api/eturista/accommodation-units?accommodationId=${accommodationId}${jid ? `&jid=${jid}` : ''}`;
+  const res = await fetch(url, {
+    headers: { 
+      Authorization: token,
+      'X-Environment': environment
+    },
   });
 
   const data = await res.json();
@@ -77,18 +91,18 @@ export async function submitToETurista(
   guestData: GuestData,
   sessionToken: string,
   activeObject: { id: number; jid: string },
-  selectedUnit?: { id: number; jid: number; number: string; floor: string },
-): Promise<{ success: boolean; message?: string }> {
+  environment: 'test' | 'prod' = 'test'
+): Promise<{ success: boolean; message?: string; details?: any; response?: any }> {
   const res = await fetch('/api/eturista/register', {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
       Authorization: sessionToken,
+      'X-Environment': environment
     },
     body: JSON.stringify({
       accommodationId: activeObject.id,
       jid: activeObject.jid,
-      unit: selectedUnit,
       guest: {
         // Identity
         firstName:    guestData.firstName,
@@ -121,7 +135,7 @@ export async function submitToETurista(
         serviceType:          guestData.serviceType,
         arrivalMode:          guestData.arrivalMode,
         stayReason:           guestData.stayReason,
-        agencyName:           undefined, // set if arrivalMode is '2' or '4'
+        agencyName:           guestData.agencyName,
       },
     }),
   });
@@ -129,13 +143,68 @@ export async function submitToETurista(
   const data = await res.json();
 
   if (!res.ok) {
-    const msg = Array.isArray(data.details)
-      ? data.details.join('\n')
-      : (data.error || 'Registracija nije uspela.');
-    return { success: false, message: msg };
+    return { 
+      success: false, 
+      message: data.error || 'Registracija nije uspela.',
+      details: data.details
+    };
   }
 
-  return { success: true, message: data.response };
+  return { 
+    success: true, 
+    message: data.message || 'Gost je uspešno registrovan.', 
+    response: data.response
+  };
+}
+
+// ─── eTurista: Get Guests (History) ──────────────────────────────────────────
+
+export async function checkoutGuest(
+  token: string,
+  payload: any,
+  environment: 'test' | 'prod' = 'test'
+): Promise<any> {
+  const res = await fetch('/api/eturista/checkout', {
+    method: 'POST',
+    headers: {
+      'Authorization': token,
+      'Content-Type': 'application/json',
+      'X-Environment': environment
+    },
+    body: JSON.stringify(payload)
+  });
+
+  const data = await res.json();
+  if (!res.ok) {
+    const msg = data.error || data.message || 'Greška pri odjavi gosta';
+    throw new Error(msg);
+  }
+  return data;
+}
+
+export async function getRegisteredGuests(
+  token: string,
+  filters: any,
+  environment: 'test' | 'prod' = 'test'
+): Promise<any> {
+  const res = await fetch(`/api/eturista/guests`, {
+    method: 'POST',
+    headers: { 
+      'Authorization': token,
+      'Content-Type': 'application/json',
+      'X-Environment': environment
+    },
+    body: JSON.stringify(filters)
+  });
+
+  const data = await res.json();
+  if (!res.ok) {
+    const msg = data.error || 'Nije moguće dohvatiti goste iz eTuriste.';
+    const details = data.details ? ` (${data.details})` : '';
+    throw new Error(`${msg}${details}`);
+  }
+
+  return data;
 }
 
 // ─── Document type code mapper ────────────────────────────────────────────────

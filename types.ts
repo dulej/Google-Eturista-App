@@ -45,6 +45,7 @@ export interface AccommodationUnit {
   number: string;
   floor: string;
   name: string;
+  accommodationJid?: string | number;
 }
 
 export interface GuestData {
@@ -73,6 +74,7 @@ export interface GuestData {
   stayReason?: string;
   arrivalTime?: string;
   plannedDepartureDate?: string;
+  agencyName?: string;
   issuingAuthority?: string;
   documentIssueDate?: string;
   entryDateToSerbia?: string;

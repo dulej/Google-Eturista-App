@@ -2,21 +2,34 @@
 import React, { useState } from 'react';
 
 interface LoginScreenProps {
-  onLogin: (user: string, pass: string) => Promise<boolean>;
+  onLogin: (user: string, pass: string, env: 'test' | 'prod') => Promise<boolean>;
 }
 
 const LoginScreen: React.FC<LoginScreenProps> = ({ onLogin }) => {
   const [username, setUsername] = useState('Dusan.jovanovic.nis.95@gmail.com');
-  const [password, setPassword] = useState('$-Fj2M6N');
+  const [env, setEnv] = useState<'test' | 'prod'>(() => 
+    (localStorage.getItem('eturista_env') as 'test' | 'prod') || 'test'
+  );
+  const [password, setPassword] = useState(env === 'prod' ? '$-Fj2M6N' : 'fk8k?9wW');
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  const handleEnvChange = (newEnv: 'test' | 'prod') => {
+    setEnv(newEnv);
+    localStorage.setItem('eturista_env', newEnv);
+    if (newEnv === 'prod') {
+      setPassword('$-Fj2M6N');
+    } else {
+      setPassword('fk8k?9wW');
+    }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
     setError(null);
     try {
-      const success = await onLogin(username, password);
+      const success = await onLogin(username, password, env);
       if (!success) {
         setError('Neispravno korisničko ime ili lozinka.');
       }
@@ -33,13 +46,30 @@ const LoginScreen: React.FC<LoginScreenProps> = ({ onLogin }) => {
   };
 
   return (
-    <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
+    <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
       <div className="text-center">
         <div className="w-16 h-16 bg-indigo-100 dark:bg-indigo-900/40 rounded-2xl flex items-center justify-center text-indigo-600 dark:text-indigo-400 mx-auto mb-4">
           <i className="fas fa-lock text-2xl"></i>
         </div>
         <h2 className="text-2xl font-bold text-slate-800 dark:text-slate-100">Prijava na sistem</h2>
         <p className="text-slate-500 dark:text-slate-400 mt-1">Unesite vaše eTurista portal kredencijale.</p>
+      </div>
+
+      <div className="bg-slate-50 dark:bg-slate-800/50 p-1.5 rounded-2xl border border-slate-200 dark:border-slate-700 flex">
+        <button
+          type="button"
+          onClick={() => handleEnvChange('test')}
+          className={`flex-1 py-2 text-xs font-bold rounded-xl transition-all ${env === 'test' ? 'bg-white dark:bg-slate-700 shadow-sm text-indigo-600 dark:text-indigo-400' : 'text-slate-500'}`}
+        >
+          Test okruženje
+        </button>
+        <button
+          type="button"
+          onClick={() => handleEnvChange('prod')}
+          className={`flex-1 py-2 text-xs font-bold rounded-xl transition-all ${env === 'prod' ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-200 dark:shadow-none' : 'text-slate-500'}`}
+        >
+          Produkcija
+        </button>
       </div>
 
       <form onSubmit={handleSubmit} className="space-y-4">

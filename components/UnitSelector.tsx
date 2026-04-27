@@ -33,12 +33,15 @@ const UnitSelector: React.FC<UnitSelectorProps> = ({ units, onSelect, onBack, is
       ) : units.length === 0 ? (
         <div className="text-center py-12 bg-slate-50 dark:bg-slate-800/50 rounded-3xl border-2 border-dashed border-slate-200 dark:border-slate-700">
           <i className="fas fa-hotel text-3xl text-slate-300 dark:text-slate-600 mb-3" />
-          <p className="text-slate-500 dark:text-slate-400">Nisu pronađene smeštajne jedinice za ovaj objekat.</p>
+          <p className="text-slate-500 dark:text-slate-400 font-medium">Nisu pronađene smeštajne jedinice.</p>
+          <p className="text-xs text-slate-400 mt-2">Pokušajte ponovo ili se obratite podršci.</p>
+
           <button 
             onClick={onBack}
-            className="mt-4 text-indigo-600 font-medium hover:underline"
+            className="mt-6 text-indigo-600 hover:text-indigo-700 font-semibold flex items-center justify-center space-x-2 mx-auto"
           >
-            Nazad na izbor objekta
+            <i className="fas fa-arrow-left text-sm" />
+            <span>Nazad na izbor objekta</span>
           </button>
         </div>
       ) : (
