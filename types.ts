@@ -1,5 +1,3 @@
-// ─── Document & identity enums ───────────────────────────────────────────────
-
 export enum DocumentType {
   PASSPORT        = 'Pasoš',
   ID_CARD         = 'Lična karta',
@@ -12,15 +10,11 @@ export enum Gender {
   FEMALE = 'Ženski',
 }
 
-// ─── App navigation ───────────────────────────────────────────────────────────
-
 export type Step =
   | 'LOGIN'
   | 'SELECT_OBJECT'
-  | 'SELECT_UNIT'
   | 'DASHBOARD'
   | 'PDF_SETTINGS'
-  | 'BILLING'
   | 'SELECT_IMAGE'
   | 'SCANNING'
   | 'REVIEW_DATA'
@@ -28,102 +22,84 @@ export type Step =
   | 'SUCCESS'
   | 'HISTORY';
 
-// ─── Domain models ────────────────────────────────────────────────────────────
-
-/** A single accommodation unit returned by the eTurista API. */
 export interface Accommodation {
-  id: number;
-  jid: string;
-  name: string;
+  id:      number;
+  name:    string;
   address?: string;
-  type?: string;
-}
-
-export interface AccommodationUnit {
-  id: number;
-  jid: number;
-  number: string;
-  floor: string;
-  name: string;
-  accommodationJid?: string | number;
+  type?:   string;
 }
 
 export interface GuestData {
-  firstName: string;
-  lastName: string;
-  dateOfBirth: string;        // ISO date (YYYY-MM-DD)
-  countryOfBirth: string;
-  nationality: string;
-  documentType: DocumentType;
-  documentNumber?: string;
-  issuingCountry: string;
-  expiryDate: string;         // ISO date
-  gender: Gender;
-  arrivalDate: string;
-  departureDate?: string;
+  // Identity
+  firstName:    string;
+  lastName:     string;
+  dateOfBirth:  string;   // yyyy-MM-dd
+  gender:       Gender;
+  isDomestic:   boolean;
+  countryOfBirth: string; // Alfa3
+  placeOfBirth?: string;
+  nationality?:  string;  // Alfa3 (foreign only)
+
+  // Document
+  documentType:    DocumentType;
+  documentTypeCode?: string;  // šifra (e.g. "72" for passport)
+  documentNumber?:   string;
+  documentIssueDate?: string;
+  expiryDate?:       string;
+  issuingCountry?:   string;
+
+  // Domestic specific
+  jmbg?:                      string;
+  residenceCountry?:           string;
+  municipalityOfResidence?:    string;
+  municipalityOfResidenceName?: string;
+  placeOfResidence?:           string;
+  placeOfResidenceName?:       string;
+
+  // Foreign specific
+  entryDateToSerbia?:      string;
+  entryPlaceToSerbia?:     string;  // šifra
+  entryPlaceToSerbiaName?: string;
+
+  // Stay
+  arrivalDate:          string;
+  arrivalTime?:         string;
+  plannedDepartureDate?: string;
+  departureDate?:        string;
+  serviceType?:          string;
+  arrivalMode?:          string;
+  stayReason?:           string;
+  agencyName?:           string;
+
+  // AI scan raw data
   rawMrz?: string;
 
-  // Extra fields for domestic (Serbian) guests
-  isDomestic: boolean;
-  jmbg?: string;
-  residenceCountry?: string;
-  municipalityOfResidence?: string;
-  placeOfResidence?: string;
-  serviceType?: string;
-  arrivalMode?: string;
-  stayReason?: string;
-  arrivalTime?: string;
-  plannedDepartureDate?: string;
-  agencyName?: string;
-  issuingAuthority?: string;
-  documentIssueDate?: string;
-  entryDateToSerbia?: string;
-  entryPlaceToSerbia?: string;
-  placeOfBirth?: string;
-  municipalityOfBirth?: string;
+  // Set after successful checkin (returned from server)
+  externalId?:    string;
+  identifikator?: string;
+}
+
+export interface CheckoutData {
+  externalId:       string;
+  accommodationId:  number;
+  checkoutDateTime: string;  // "yyyy-MM-dd HH:mm"
+  serviceCount?:    number;  // BrojPruzenihUslugaSmestaja (required for legal entities)
 }
 
 export interface PdfCustomization {
-  physicalPersonName: string;
+  physicalPersonName:    string;
   physicalPersonAddress: string;
-  objectType: string;
-  objectAddress: string;
-  priceDetails: string;
-  signatureImage?: string;    // Base64 data URL
+  objectType:            string;
+  objectAddress:         string;
+  priceDetails:          string;
+  signatureImage?:       string;
 }
-
-// ─── Billing ──────────────────────────────────────────────────────────────────
-
-export type PlanType = 'STARTER' | 'PRO' | 'ENTERPRISE';
-
-export interface UserAccount {
-  plan: PlanType;
-  credits: number;
-}
-
-// ─── Log records (read from server) ─────────────────────────────────────────
 
 export interface EntryLog {
-  id: number;
-  timestamp: string;
-  guestName: string;
+  id:             number;
+  timestamp:      string;
+  guestName:      string;
   documentNumber: string;
   accommodationId: number;
   accommodationName: string;
-}
-
-export interface AuditLog {
-  id: number;
-  timestamp: string;
-  action: string;
-  userId: string;
-  details: string;
-}
-
-export interface ErrorLog {
-  id: number;
-  timestamp: string;
-  message: string;
-  stack: string;
-  context: string;
 }
