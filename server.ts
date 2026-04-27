@@ -8,10 +8,17 @@ import { randomUUID } from "crypto";
 
 const IS_PROD = process.env.NODE_ENV === "production";
 
-// Official API base URLs (from documentation v4.9)
-const API_BASE = IS_PROD
-  ? "https://www.portal.eturista.gov.rs/eturistwebapi/api"
-  : "https://www.test.portal.eturista.gov.rs/eturistwebapi/api";
+function getEturistaUrl(req?: express.Request): string {
+  const env = req?.header('x-environment') || req?.header('X-Environment');
+  if (env === 'prod' || env === 'production') {
+    return "https://www.portal.eturista.gov.rs/eturistwebapi/api";
+  } else if (env === 'test') {
+    return "https://www.test.portal.eturista.gov.rs/eturistwebapi/api";
+  }
+  return IS_PROD 
+    ? "https://www.portal.eturista.gov.rs/eturistwebapi/api"
+    : "https://www.test.portal.eturista.gov.rs/eturistwebapi/api";
+}
 
 // ─── Database ─────────────────────────────────────────────────────────────────
 
@@ -213,8 +220,8 @@ async function startServer() {
   app.use(express.json({ limit: "50mb" }));
 
   // ── Health ────────────────────────────────────────────────────────────────
-  app.get("/api/health", (_req, res) =>
-    res.json({ status: "ok", env: IS_PROD ? "production" : "test", api: API_BASE })
+  app.get("/api/health", (req, res) =>
+    res.json({ status: "ok", env: IS_PROD ? "production" : "test", api: getEturistaUrl(req) })
   );
 
   // ── Login ─────────────────────────────────────────────────────────────────
@@ -223,7 +230,7 @@ async function startServer() {
     if (!username || !password) return res.status(400).json({ error: "Korisničko ime i lozinka su obavezni." });
 
     try {
-      const r = await fetch(`${API_BASE}/Autentifikacija/PrijavaKorisnickoImeLozinka`, {
+      const r = await fetch(`${getEturistaUrl(req)}/Autentifikacija/PrijavaKorisnickoImeLozinka`, {
         method: "POST",
         headers: { "Content-Type": "application/json", Accept: "application/json" },
         body: JSON.stringify({ korisnickoIme: username, lozinka: password }),
@@ -255,7 +262,7 @@ async function startServer() {
 
     try {
       const r = await fetch(
-        `${API_BASE}/UgostiteljskiObjekat/vratiUgostiteljskeObjektePremaUgostiteljId?ugostiteljId=${userId}`,
+        `${getEturistaUrl(req)}/UgostiteljskiObjekat/vratiUgostiteljskeObjektePremaUgostiteljId?ugostiteljId=${userId}`,
         { headers: { Authorization: token, Accept: "application/json" } }
       );
       if (!r.ok) throw new Error(`eTurista ${r.status}`);
@@ -292,7 +299,7 @@ async function startServer() {
     console.log("\n[checkin] →", JSON.stringify(payload, null, 2));
 
     try {
-      const r = await fetch(`${API_BASE}/hoteliimport/checkin`, {
+      const r = await fetch(`${getEturistaUrl(req)}/hoteliimport/checkin`, {
         method: "POST",
         headers: {
           Authorization:  token,
@@ -318,7 +325,7 @@ async function startServer() {
         });
       }
 
-      const identifikator  = responseData.identifikator || null;
+      const identifikator  = responseData.turistaId ?? responseData.TuristaId ?? responseData.identifikator ?? responseData.Identifikator ?? responseData.id ?? responseData.Id ?? null;
       const warnings       = responseData.warnings ? JSON.stringify(responseData.warnings) : null;
       const isDomestic     = guest.isDomestic === true || guest.isDomestic === "true";
       const polSifra       = ["Ženski", "Z", "Female"].includes(guest.gender) ? "Z" : "M";
@@ -428,7 +435,7 @@ async function startServer() {
     console.log("\n[checkout] →", JSON.stringify(payload, null, 2));
 
     try {
-      const r = await fetch(`${API_BASE}/hoteliimport/checkout`, {
+      const r = await fetch(`${getEturistaUrl(req)}/hoteliimport/checkout`, {
         method: "POST",
         headers: {
           Authorization:  token,
@@ -525,7 +532,7 @@ async function startServer() {
 
   app.listen(PORT, "0.0.0.0", () => {
     console.log(`\n🚀  http://0.0.0.0:${PORT}  [${IS_PROD ? "PRODUCTION" : "TEST"}]`);
-    console.log(`📡  ${API_BASE}\n`);
+    console.log(`📡  ${getEturistaUrl()}\n`);
   });
 }
 

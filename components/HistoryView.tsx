@@ -90,9 +90,9 @@ const HistoryView: React.FC<HistoryViewProps> = ({ onBack, sessionToken, id, jid
         // Try multiple ways to find the guest in our local DB
         // eTurista 'ImeIPrezime' can be 'Ime Prezime' or 'Prezime Ime'
         let queryStr = `
-          SELECT ExternalId, UgostiteljskiObjekatJedinstveniIdentifikator, VrstaPruzenihUslugaSifra 
-          FROM Gost_v4 
-          WHERE InternalId = '${safeTid}' OR ExternalId = '${safeTid}'
+          SELECT ExternalId, UgostiteljskiObjekatJedinstveniIdentifikator, VrstaPruzenihUslugaSifra, EturistaIdentifikator
+          FROM Gost 
+          WHERE EturistaIdentifikator = '${safeTid}' OR ExternalId = '${safeTid}'
         `;
         
         if (name) {
@@ -153,7 +153,7 @@ const HistoryView: React.FC<HistoryViewProps> = ({ onBack, sessionToken, id, jid
         BrojPruzenihUslugaSmestaja: String(guestData.VrstaPruzenihUslugaSifra || "1"), 
         UgostiteljskiObjekatJedinstveniIdentifikator: String(guestData.UgostiteljskiObjekatJedinstveniIdentifikator || jid || entry.UgostiteljskiObjekatJedinstveniIdentifikator), 
         ExternalId: String(guestData.ExternalId || entry.turistaId || entry.TuristaId),
-        TuristaId: String(guestData.InternalId || entry.turistaId || entry.TuristaId)
+        TuristaId: String(guestData.EturistaIdentifikator || entry.turistaId || entry.TuristaId)
       };
 
       setLastApiResponse(prev => ({ ...prev, payload })); // Update debug with final payload

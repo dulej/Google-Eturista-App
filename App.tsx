@@ -23,6 +23,8 @@ const App: React.FC = () => {
   const [error,          setError]          = useState<string | null>(null);
   const [warnings,       setWarnings]       = useState<string[]>([]);
 
+  const [eturistaEnv,    setEturistaEnv]    = useState<'test' | 'prod'>('test');
+
   const [isDarkMode, setIsDarkMode] = useState<boolean>(() =>
     localStorage.getItem('eturista_theme') === 'dark'
   );
@@ -62,11 +64,12 @@ const App: React.FC = () => {
 
   // ── Handlers ───────────────────────────────────────────────────────────────
 
-  const handleLogin = useCallback(async (user: string, pass: string): Promise<boolean> => {
+  const handleLogin = useCallback(async (user: string, pass: string, env: 'test' | 'prod'): Promise<boolean> => {
     setError(null);
     try {
-      const auth    = await loginToETurista(user, pass);
-      const objects = await getSmeštajneJedinice(auth.token, auth.id);
+      setEturistaEnv(env);
+      const auth    = await loginToETurista(user, pass, env);
+      const objects = await getSmeštajneJedinice(auth.token, auth.id, env);
 
       setSessionToken(auth.token);
       setUserId(auth.id);
@@ -121,7 +124,7 @@ const App: React.FC = () => {
     setWarnings([]);
 
     try {
-      const result = await submitToETurista(guestData, sessionToken, activeObject.id);
+      const result = await submitToETurista(guestData, sessionToken, activeObject, eturistaEnv);
 
       if (result.success) {
         // Store externalId and identifikator on guestData so checkout can use them
