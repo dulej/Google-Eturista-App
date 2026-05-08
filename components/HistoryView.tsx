@@ -1,7 +1,7 @@
 
 import React, { useEffect, useState } from 'react';
 import { Calendar, User, FileText, MapPin, Clock, Trash2, ChevronRight, Search, Database, Table as TableIcon, ExternalLink, LogOut } from 'lucide-react';
-import { getRegisteredGuests, checkoutGuest } from '../services/geminiService';
+import { getRegisteredGuests, checkoutFromETurista } from '../services/eturistaService';
 
 interface HistoryViewProps {
   onBack: () => void;
@@ -158,7 +158,7 @@ const HistoryView: React.FC<HistoryViewProps> = ({ onBack, sessionToken, id, jid
 
       setLastApiResponse(prev => ({ ...prev, payload })); // Update debug with final payload
 
-      const result = await checkoutGuest(sessionToken, payload, environment);
+      const result = await checkoutFromETurista(sessionToken, payload.ExternalId, payload.UgostiteljskiObjekatJedinstveniIdentifikator, payload.DatumICasOdjave, payload.BrojPruzenihUslugaSmestaja ? parseInt(payload.BrojPruzenihUslugaSmestaja, 10) : undefined, payload.Izmena === "true");
       console.log("Checkout successful. Payload:", payload, "Result:", result);
       setLastApiResponse({ 
         endpoint: 'CheckOut', 
@@ -186,20 +186,23 @@ const HistoryView: React.FC<HistoryViewProps> = ({ onBack, sessionToken, id, jid
     setIsLoading(true);
     setError(null);
     
+    // eTurista search payload
     const payload = {
       ugostiteljskiObjekatIds: [Number(id)],
+      pageNumber: pageIndex + 1,
+      pageSize: pageSize,
+      datumIvremeDolaskaOd: `${dateFrom} 00:00:00`,
+      datumIvremeDolaskaDo: `${dateTo} 23:59:59`,
+      turistaStatusIds: selectedStatus !== null ? [selectedStatus] : [1, 2],
       ime: null,
       prezime: null,
-      tipLica: [],
-      turistaStatusIds: selectedStatus !== null ? [selectedStatus] : [],
-      objekatStatusIds: [],
-      datumIvremeDolaskaOd: `${dateFrom}T00:00:00.000Z`,
-      datumIvremeDolaskaDo: `${dateTo}T23:59:59.000Z`,
+      identifikacioniBroj: null,
+      turistaId: null,
+      stranoLiceId: null,
+      eksterniId: null,
       datumIvremeOdlaskaOd: null,
       datumIvremeOdlaskaDo: null,
-      planiraniDatumOdlaska: null,
-      pageIndex: pageIndex,
-      pageSize: pageSize
+      planiraniDatumOdlaska: null
     };
 
     getRegisteredGuests(sessionToken, payload, environment)

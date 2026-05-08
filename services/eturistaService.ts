@@ -35,10 +35,10 @@ export interface CheckoutResult {
 
 // ─── Login ────────────────────────────────────────────────────────────────────
 
-export async function loginToETurista(username: string, password: string): Promise<EturistaAuth> {
+export async function loginToETurista(username: string, password: string, environment: 'test' | 'prod' = 'test'): Promise<EturistaAuth> {
   const res = await fetch("/api/eturista/login", {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
+    headers: { "Content-Type": "application/json", "X-Environment": environment },
     body: JSON.stringify({ username, password }),
   });
 
@@ -57,11 +57,12 @@ export async function loginToETurista(username: string, password: string): Promi
 
 // ─── Token Refresh ────────────────────────────────────────────────────────────
 
-export async function refreshToken(token: string, refreshTokenValue: string): Promise<EturistaAuth> {
-  const res = await fetch("/api/eturista/refresh-token", {
+export async function refreshToken(token: string, refreshTokenValue: string, environment: 'test' | 'prod' = 'test'): Promise<EturistaAuth> {
+  const res = await fetch(`/api/eturista/refresh-token`, {
     headers: {
-      Authorization: `Bearer ${token}`,
+      Authorization: token,
       RefreshToken: refreshTokenValue,
+      "X-Environment": environment
     },
   });
 
@@ -74,10 +75,11 @@ export async function refreshToken(token: string, refreshTokenValue: string): Pr
 
 export async function getSmeštajneJedinice(
   token: string,
-  userId: number
+  userId: number,
+  environment: 'test' | 'prod' = 'test'
 ): Promise<{ id: number; name: string; address: string; type: string }[]> {
   const res = await fetch(`/api/eturista/accommodations?userId=${userId}`, {
-    headers: { Authorization: `Bearer ${token}` },
+    headers: { Authorization: token, "X-Environment": environment },
   });
   if (!res.ok) throw new Error("Failed to load accommodations");
   return res.json();
@@ -90,13 +92,15 @@ export async function getSmeštajneJedinice(
 export async function submitToETurista(
   guest: GuestData,
   sessionToken: string,
-  accommodationId: number
+  accommodationId: number,
+  environment: 'test' | 'prod' = 'test'
 ): Promise<CheckinResult> {
   const res = await fetch("/api/eturista/checkin", {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
-      Authorization: `Bearer ${sessionToken}`,
+      Authorization: sessionToken,
+      "X-Environment": environment
     },
     body: JSON.stringify({ guest, accommodationId }),
   });
@@ -126,16 +130,18 @@ export async function submitToETurista(
 export async function checkoutFromETurista(
   sessionToken: string,
   externalId: string,
-  accommodationId: number,
+  accommodationId: number | string,
   checkoutDateTime: string,  // "YYYY-MM-DD HH:mm"
   numberOfNights?: number,   // required for legal entities; omit/null for physical persons
-  isAmendment = false
+  isAmendment = false,
+  environment: 'test' | 'prod' = 'test'
 ): Promise<CheckoutResult> {
   const res = await fetch("/api/eturista/checkout", {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
-      Authorization: `Bearer ${sessionToken}`,
+      Authorization: sessionToken,
+      "X-Environment": environment
     },
     body: JSON.stringify({
       externalId,
@@ -156,4 +162,35 @@ export async function checkoutFromETurista(
   }
 
   return { success: true, message: data.message, warnings: data.warnings };
+}
+
+// ─── Get Guests (History) ─────────────────────────────────────────────────────
+
+export async function getRegisteredGuests(
+  token: string,
+  filters: any,
+  environment: 'test' | 'prod' = 'test'
+): Promise<any> {
+  const res = await fetch(`/api/eturista/guests`, {
+    method: 'POST',
+    headers: { 
+      'Authorization': token,
+      'Content-Type': 'application/json',
+      'X-Environment': environment
+    },
+    body: JSON.stringify(filters)
+  });
+
+  const data = await res.json();
+  if (!res.ok) {
+    const msg = data.error || 'Nije moguće dohvatiti goste iz eTuriste.';
+    let details = `HTTP ${data.status || res.status}`;
+    if (data.details) details += `: ${data.details}`;
+    if (data.debug && data.debug.responsePreview) {
+      details += ` | Preview: ${data.debug.responsePreview}`;
+    }
+    throw new Error(`${msg} (${details})`);
+  }
+
+  return data;
 }

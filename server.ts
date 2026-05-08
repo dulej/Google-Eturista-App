@@ -110,7 +110,23 @@ const logger = {
 // ─── eTurista API config ──────────────────────────────────────────────────────
 // NOTE: swap to test URL during development:
 //   https://www.test.portal.eturista.gov.rs/eturistwebapi/api
-const ETURISTA_BASE_URL = "https://www.portal.eturista.gov.rs/eturistwebapi/api";
+const ETURISTA_BASE_URL = "https://portal.eturista.gov.rs/eturistwebapi/api";
+
+function getEturistaUrl(req?: express.Request): string {
+  const env = req?.header('x-environment') || req?.header('X-Environment');
+  if (env === 'prod' || env === 'production') {
+    return "https://portal.eturista.gov.rs/eturistwebapi/api";
+  } else if (env === 'test') {
+    return "https://test.portal.eturista.gov.rs/eturistwebapi/api";
+  }
+  return ETURISTA_BASE_URL;
+}
+
+function getAuthHeader(token?: string): string {
+  if (!token) return "";
+  if (token.toLowerCase().startsWith("bearer ")) return token;
+  return `Bearer ${token}`;
+}
 
 // Format a date string "YYYY-MM-DD" → "YYYY-MM-DD" (pass through, validate)
 // Format a datetime "YYYY-MM-DD HH:mm" → "YYYY-MM-DD HH:mm" (pass through)
@@ -136,8 +152,8 @@ async function startServer() {
   app.use(express.json({ limit: "50mb" }));
 
   // Health
-  app.get("/api/health", (_req, res) => {
-    res.json({ status: "ok", time: new Date().toISOString() });
+  app.get("/api/health", (req, res) => {
+    res.json({ status: "ok", time: new Date().toISOString(), api: getEturistaUrl(req) });
   });
 
   // ── LOGIN ──────────────────────────────────────────────────────────────────
@@ -151,7 +167,7 @@ async function startServer() {
         return res.status(400).json({ error: "Username and password are required" });
 
       const response = await fetch(
-        `${ETURISTA_BASE_URL}/Autentifikacija/PrijavaKorisnickoImeLozinka`,
+        `${getEturistaUrl(req)}/Autentifikacija/PrijavaKorisnickoImeLozinka`,
         {
           method: "POST",
           headers: { "Content-Type": "application/json", Accept: "application/json" },
@@ -165,7 +181,10 @@ async function startServer() {
         return res.status(response.status).json({ error: "eTurista login failed", details: text });
       }
 
-      const data: any = await response.json();
+      let data: any = await response.json();
+      if (typeof data === 'string') {
+        try { data = JSON.parse(data); } catch (e) {}
+      }
 
       const token: string | undefined = data.token || data.Token;
       const refreshToken: string | undefined = data.refreshToken || data.RefreshToken;
@@ -196,10 +215,10 @@ async function startServer() {
         return res.status(400).json({ error: "Authorization and RefreshToken headers required" });
 
       const response = await fetch(
-        `${ETURISTA_BASE_URL}/Autentifikacija/OsveziToken`,
+        `${getEturistaUrl(req)}/Autentifikacija/OsveziToken`,
         {
           method: "GET",
-          headers: { Authorization: authorization, RefreshToken: refreshToken, Accept: "application/json" },
+          headers: { Authorization: getAuthHeader(authorization), RefreshToken: refreshToken, Accept: "application/json" },
         }
       );
 
@@ -208,7 +227,10 @@ async function startServer() {
         return res.status(response.status).json({ error: "Token refresh failed", details: text });
       }
 
-      const data: any = await response.json();
+      let data: any = await response.json();
+      if (typeof data === 'string') {
+        try { data = JSON.parse(data); } catch(e) {}
+      }
       res.json({
         sessionToken: data.token || data.Token,
         refreshToken: data.refreshToken || data.RefreshToken,
@@ -229,13 +251,16 @@ async function startServer() {
         return res.status(401).json({ error: "Unauthorized" });
 
       const response = await fetch(
-        `${ETURISTA_BASE_URL}/UgostiteljskiObjekat/vratiUgostiteljskeObjektePremaUgostiteljId?ugostiteljId=${userId}`,
-        { headers: { Authorization: token, Accept: "application/json" } }
+        `${getEturistaUrl(req)}/UgostiteljskiObjekat/vratiUgostiteljskeObjektePremaUgostiteljId?ugostiteljId=${userId}`,
+        { headers: { Authorization: getAuthHeader(token), Accept: "application/json" } }
       );
 
       if (!response.ok) throw new Error(`eTurista error: ${response.status}`);
 
-      const raw: any = await response.json();
+      let raw: any = await response.json();
+      if (typeof raw === 'string') {
+        try { raw = JSON.parse(raw); } catch(e) {}
+      }
       const items: any[] = Array.isArray(raw) ? raw : (raw.result || raw.Data || raw.data || []);
 
       const accommodations = items.map((item: any) => ({
@@ -337,10 +362,10 @@ async function startServer() {
       }
 
       // ── Call eTurista checkin ──
-      const response = await fetch(`${ETURISTA_BASE_URL}/hoteliimport/checkin`, {
+      const response = await fetch(`${getEturistaUrl(req)}/hoteliimport/checkin`, {
         method: "POST",
         headers: {
-          Authorization: token,
+          Authorization: getAuthHeader(token),
           "Content-Type": "application/json",
           Accept: "application/json",
         },
@@ -349,7 +374,12 @@ async function startServer() {
 
       const responseText = await response.text();
       let responseData: any;
-      try { responseData = JSON.parse(responseText); } catch { responseData = { raw: responseText }; }
+      try { 
+        responseData = JSON.parse(responseText); 
+        if (typeof responseData === 'string') {
+          responseData = JSON.parse(responseData);
+        }
+      } catch { responseData = { raw: responseText }; }
 
       if (!response.ok) {
         logger.error(
@@ -478,10 +508,10 @@ async function startServer() {
         payload.BrojPruzenihUslugaSmestaja = brujenihUsluga;
       }
 
-      const response = await fetch(`${ETURISTA_BASE_URL}/hoteliimport/checkout`, {
+      const response = await fetch(`${getEturistaUrl(req)}/hoteliimport/checkout`, {
         method: "POST",
         headers: {
-          Authorization: token,
+          Authorization: getAuthHeader(token),
           "Content-Type": "application/json",
           Accept: "application/json",
         },
@@ -490,7 +520,12 @@ async function startServer() {
 
       const responseText = await response.text();
       let responseData: any;
-      try { responseData = JSON.parse(responseText); } catch { responseData = { raw: responseText }; }
+      try { 
+        responseData = JSON.parse(responseText); 
+        if (typeof responseData === 'string') {
+          responseData = JSON.parse(responseData);
+        }
+      } catch { responseData = { raw: responseText }; }
 
       if (!response.ok) {
         logger.error("CHECKOUT_HTTP_ERROR", undefined, `HTTP ${response.status}: ${responseText}`);
@@ -528,6 +563,54 @@ async function startServer() {
     } catch (err: any) {
       logger.error("CHECKOUT_EXCEPTION", err.stack, err.message);
       res.status(500).json({ error: "Check-out failed", details: err.message });
+    }
+  });
+
+  // ── GET GUESTS ─────────────────────────────────────────────────────────────
+  // Spec: POST /Turista/PretragaTurista
+  app.post("/api/eturista/guests", async (req, res) => {
+    try {
+      const token = req.headers.authorization;
+      if (!token) return res.status(401).json({ error: "Unauthorized" });
+
+      const response = await fetch(`${getEturistaUrl(req)}/Turista/PretragaTurista`, {
+        method: "POST",
+        headers: {
+          Authorization: getAuthHeader(token),
+          "Content-Type": "application/json",
+          Accept: "application/json",
+        },
+        body: JSON.stringify(req.body),
+      });
+
+      const responseText = await response.text();
+      let responseData: any;
+      try { 
+        responseData = JSON.parse(responseText); 
+        if (typeof responseData === 'string') {
+          responseData = JSON.parse(responseData);
+        }
+      } catch { responseData = { raw: responseText }; }
+
+      if (!response.ok) {
+        logger.error("GUESTS_HTTP_ERROR", undefined, `HTTP ${response.status}: ${responseText}`);
+        return res.status(response.status).json({
+          error: "eTurista pretraga gostiju failed",
+          details: responseData?.errors || responseData?.message || responseData?.error || responseText.substring(0, 255),
+          status: response.status,
+          url: `${getEturistaUrl(req)}/Turista/PretragaTurista`,
+          debug: {
+            status: response.status,
+            requestBody: req.body,
+            responsePreview: responseText.substring(0, 500) || "No response body"
+          }
+        });
+      }
+
+      res.json(responseData);
+    } catch (err: any) {
+      logger.error("GUESTS_EXCEPTION", err.stack, err.message);
+      res.status(500).json({ error: "Pretraga gostiju failed", details: err.message });
     }
   });
 

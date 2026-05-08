@@ -10,7 +10,8 @@ import GuestForm from './components/GuestForm';
 import PdfFiller from './components/PdfFiller';
 import HistoryView from './components/HistoryView';
 import { Step, GuestData, PdfCustomization, Accommodation } from './types';
-import { extractGuestDataFromId, submitToETurista, loginToETurista, getSmeštajneJedinice } from './services/geminiService';
+import { extractGuestDataFromId } from './services/geminiService';
+import { submitToETurista, loginToETurista, getSmeštajneJedinice } from './services/eturistaService';
 
 const App: React.FC = () => {
   const [step,           setStep]           = useState<Step>('LOGIN');
@@ -131,7 +132,7 @@ const App: React.FC = () => {
         setGuestData(prev => prev ? {
           ...prev,
           externalId:    result.externalId,
-          identifikator: result.identifikator,
+          identifikator: result.eturistaIdentifikator,
         } : prev);
 
         if (result.warnings?.length) setWarnings(result.warnings);
@@ -193,8 +194,14 @@ const App: React.FC = () => {
             />
           )}
 
-          {step === 'HISTORY' && (
-            <HistoryView onBack={() => setStep('DASHBOARD')} />
+          {step === 'HISTORY' && sessionToken && activeObject && (
+            <HistoryView 
+              onBack={() => setStep('DASHBOARD')} 
+              sessionToken={sessionToken}
+              id={activeObject.id}
+              jid={String(activeObject.id)} // Assuming JID is same as ID if not explicitly provided
+              environment={eturistaEnv}
+            />
           )}
 
           {step === 'PDF_SETTINGS' && (

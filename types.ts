@@ -22,6 +22,15 @@ export type Step =
   | 'SUCCESS'
   | 'HISTORY';
 
+export type PlanType = 'FREE' | 'STARTER' | 'PRO' | 'ENTERPRISE';
+
+export interface AccommodationUnit {
+  id: number;
+  name: string;
+  type?: string;
+  capacity?: number;
+}
+
 export interface Accommodation {
   id:      number;
   name:    string;
@@ -38,6 +47,7 @@ export interface GuestData {
   isDomestic:   boolean;
   countryOfBirth: string; // Alfa3
   placeOfBirth?: string;
+  municipalityOfBirth?: string;
   nationality?:  string;  // Alfa3 (foreign only)
 
   // Document
@@ -47,6 +57,7 @@ export interface GuestData {
   documentIssueDate?: string;
   expiryDate?:       string;
   issuingCountry?:   string;
+  issuingAuthority?: string;
 
   // Domestic specific
   jmbg?:                      string;
